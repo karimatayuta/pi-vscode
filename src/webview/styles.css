@@ -882,11 +882,16 @@ select:disabled {
 .message-card.user {
 	width: fit-content;
 	max-width: min(92%, 720px);
+	align-self: flex-end;
+	margin-left: auto;
 	margin-right: 0;
 	padding: 8px 11px;
 	border: 1px solid transparent;
 	border-radius: var(--pi-radius);
 	background: color-mix(in srgb, var(--pi-user), var(--pi-background) 22%);
+	/* Skip-painting would leave a 0-width fit-content card off-screen forever. */
+	content-visibility: visible;
+	contain-intrinsic-size: auto auto;
 }
 
 .message-card.error {

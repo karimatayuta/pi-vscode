@@ -153,6 +153,28 @@ describe("Pi assistant activity layout", () => {
 	});
 });
 
+describe("user prompt visibility", () => {
+	test("renders user prompts in the timeline instead of hiding them", () => {
+		expect(timelineSource).toContain('messages.map((message, index) => {');
+		expect(timelineSource).toContain("{message.role === \"assistant\" ? null : messageBody}");
+		expect(timelineSource).not.toMatch(/messages\.filter\(\s*\(?message\)?\s*=>\s*message\.role\s*!==\s*"user"/u);
+		expect(timelineSource).toContain('aria-label={`${label} message`}');
+		expect(timelineSource).toContain('message.role === "user"');
+		expect(timelineSource).toContain('? "You"');
+	});
+
+	test("keeps user bubbles paintable when they use fit-content width", () => {
+		const userCardStyles = styleSource.slice(
+			styleSource.indexOf(".message-card.user {"),
+			styleSource.indexOf(".message-card.error {"),
+		);
+		expect(userCardStyles).toContain("width: fit-content;");
+		expect(userCardStyles).toContain("align-self: flex-end;");
+		expect(userCardStyles).toContain("content-visibility: visible;");
+		expect(userCardStyles).not.toMatch(/content-visibility:\s*auto/u);
+	});
+});
+
 describe("Pi activity transition announcements", () => {
 	test("announces only authoritative transitions out of running", () => {
 		expect(activityTransitionAnnouncement(null, "idle", false)).toBe("");
