@@ -1,0 +1,19 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+
+# VS Code extension tests and packages
+.vscode-test/
+*.vsix
+
+# Bun caches and logs
+.bun/
+*.log
+
+# Local environment and OS files
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db

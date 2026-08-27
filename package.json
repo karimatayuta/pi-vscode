@@ -1,0 +1,368 @@
+{
+	"name": "pi-agent",
+	"displayName": "Pi Agent",
+	"description": "A secure, workspace-aware Pi coding agent for Visual Studio Code.",
+	"version": "0.1.0",
+	"publisher": "karimatayuta",
+	"license": "MIT",
+	"preview": true,
+	"type": "module",
+	"main": "./dist/extension/extension.js",
+	"packageManager": "bun@1.3.14",
+	"engines": {
+		"node": ">=22.19.0",
+		"vscode": "^1.106.0"
+	},
+	"extensionKind": [
+		"workspace"
+	],
+	"categories": [
+		"AI",
+		"Other"
+	],
+	"keywords": [
+		"agent",
+		"ai",
+		"chat",
+		"coding-agent",
+		"pi"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/karimatayuta/pi-vscode.git"
+	},
+	"bugs": {
+		"url": "https://github.com/karimatayuta/pi-vscode/issues"
+	},
+	"homepage": "https://github.com/karimatayuta/pi-vscode#readme",
+	"capabilities": {
+		"untrustedWorkspaces": {
+			"supported": "limited",
+			"description": "Chat and read-only context remain available. File changes and command execution require a trusted workspace."
+		},
+		"virtualWorkspaces": {
+			"supported": false,
+			"description": "Pi Agent requires a filesystem-backed workspace for agent tools and session storage."
+		}
+	},
+	"scripts": {
+		"audit:dependencies": "bun audit --audit-level high",
+		"build": "bun scripts/build.ts",
+		"build:test": "bun scripts/build-integration-tests.ts",
+		"build:production": "bun scripts/build.ts --production",
+		"check": "bun run lint && bun run typecheck && bun run test",
+		"dev": "bun scripts/build.ts --watch",
+		"fix": "biome check --write .",
+		"format": "biome format --write .",
+		"lint": "biome check .",
+		"package": "vsce package && bun scripts/verify-package.ts",
+		"package:ci": "vsce package --out pi-agent-ci.vsix && bun scripts/verify-package.ts pi-agent-ci.vsix",
+		"package:list": "vsce ls",
+		"package:verify": "bun scripts/verify-package.ts",
+		"test": "bun test --path-ignore-patterns 'test/integration/**' --path-ignore-patterns 'dist/test/**'",
+		"test:integration": "bun run build:production && bun run build:test && vscode-test --fail-zero",
+		"test:package": "bun scripts/test-package.ts",
+		"test:unit": "bun test --path-ignore-patterns 'test/integration/**' --path-ignore-patterns 'dist/test/**'",
+		"typecheck": "tsc --noEmit --pretty",
+		"vscode:prepublish": "bun run check && bun run build:production"
+	},
+	"overrides": {
+		"diff": "8.0.4",
+		"serialize-javascript": "7.0.5"
+	},
+	"dependencies": {
+		"@earendil-works/pi-coding-agent": "0.84.3"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.10",
+		"@preact/signals": "2.11.1",
+		"@types/bun": "1.3.14",
+		"@types/node": "22.20.1",
+		"@types/vscode": "1.106.1",
+		"@vscode/test-cli": "0.0.15",
+		"@vscode/test-electron": "3.1.0",
+		"@vscode/vsce": "3.9.2",
+		"beautiful-mermaid": "1.1.3",
+		"dompurify": "3.4.14",
+		"markdown-it": "15.0.0",
+		"preact": "10.29.8",
+		"typescript": "7.0.2",
+		"valibot": "1.4.2"
+	},
+	"contributes": {
+		"viewsContainers": {
+			"secondarySidebar": [
+				{
+					"id": "piAgent",
+					"title": "Pi Agent",
+					"icon": "media/pi-agent.svg"
+				}
+			]
+		},
+		"views": {
+			"piAgent": [
+				{
+					"id": "piAgent.chat",
+					"name": "Chat",
+					"contextualTitle": "Pi Agent Chat",
+					"type": "webview",
+					"visibility": "visible",
+					"icon": "$(comment-discussion)"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "piAgent.openChat",
+				"title": "Open Chat",
+				"category": "Pi Agent",
+				"icon": "$(comment-discussion)"
+			},
+			{
+				"command": "piAgent.newChat",
+				"title": "New Chat",
+				"category": "Pi Agent",
+				"icon": "$(add)"
+			},
+			{
+				"command": "piAgent.showHistory",
+				"title": "Show Chat History",
+				"category": "Pi Agent",
+				"icon": "$(history)"
+			},
+			{
+				"command": "piAgent.focusComposer",
+				"title": "Focus Prompt",
+				"category": "Pi Agent",
+				"icon": "$(edit)"
+			},
+			{
+				"command": "piAgent.stop",
+				"title": "Stop",
+				"category": "Pi Agent",
+				"icon": "$(debug-stop)",
+				"enablement": "piAgent.isRunning"
+			},
+			{
+				"command": "piAgent.addContext",
+				"title": "Add Context…",
+				"category": "Pi Agent",
+				"icon": "$(attach)"
+			},
+			{
+				"command": "piAgent.addCurrentFile",
+				"title": "Add Current File to Context",
+				"category": "Pi Agent",
+				"icon": "$(file-add)",
+				"enablement": "resourceScheme == file"
+			},
+			{
+				"command": "piAgent.addCurrentSelection",
+				"title": "Add Current Selection to Context",
+				"category": "Pi Agent",
+				"icon": "$(selection)",
+				"enablement": "editorHasSelection"
+			},
+			{
+				"command": "piAgent.addExplorerContext",
+				"title": "Add to Pi Agent Context",
+				"category": "Pi Agent",
+				"icon": "$(attach)",
+				"enablement": "resourceScheme == file"
+			},
+			{
+				"command": "piAgent.clearContext",
+				"title": "Clear Context",
+				"category": "Pi Agent",
+				"icon": "$(clear-all)",
+				"enablement": "piAgent.hasContext"
+			},
+			{
+				"command": "piAgent.openSettings",
+				"title": "Open Settings",
+				"category": "Pi Agent",
+				"icon": "$(settings-gear)"
+			},
+			{
+				"command": "piAgent.configureProvider",
+				"title": "Configure Provider…",
+				"category": "Pi Agent",
+				"icon": "$(key)"
+			},
+			{
+				"command": "piAgent.resetPermissions",
+				"title": "Reset Saved Permissions",
+				"category": "Pi Agent",
+				"icon": "$(lock)"
+			}
+		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "piAgent.newChat",
+					"when": "view == piAgent.chat",
+					"group": "navigation@1"
+				},
+				{
+					"command": "piAgent.showHistory",
+					"when": "view == piAgent.chat",
+					"group": "navigation@2"
+				},
+				{
+					"command": "piAgent.stop",
+					"when": "view == piAgent.chat && piAgent.isRunning",
+					"group": "navigation@3"
+				},
+				{
+					"command": "piAgent.addContext",
+					"when": "view == piAgent.chat",
+					"group": "2_context@1"
+				},
+				{
+					"command": "piAgent.openSettings",
+					"when": "view == piAgent.chat",
+					"group": "9_settings@1"
+				}
+			],
+			"explorer/context": [
+				{
+					"command": "piAgent.addExplorerContext",
+					"when": "resourceScheme == file",
+					"group": "navigation@20"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "piAgent.addCurrentSelection",
+					"when": "editorHasSelection",
+					"group": "z_commands@10"
+				},
+				{
+					"command": "piAgent.addCurrentFile",
+					"when": "resourceScheme == file",
+					"group": "z_commands@11"
+				}
+			],
+			"editor/title/context": [
+				{
+					"command": "piAgent.addCurrentFile",
+					"when": "resourceScheme == file",
+					"group": "navigation@20"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "piAgent.addExplorerContext",
+					"when": "false"
+				}
+			]
+		},
+		"configuration": [
+			{
+				"title": "Pi Agent: Chat",
+				"order": 10,
+				"properties": {
+					"piAgent.appearance.autoGenerateTitles": {
+						"type": "boolean",
+						"default": true,
+						"scope": "application",
+						"description": "Automatically generate a concise title after the first prompt."
+					}
+				}
+			},
+			{
+				"title": "Pi Agent: Security",
+				"order": 20,
+				"properties": {
+					"piAgent.security.defaultApprovalMode": {
+						"type": "string",
+						"enum": [
+							"plan",
+							"ask",
+							"auto-edit"
+						],
+						"enumDescriptions": [
+							"Read and plan only; changes and commands are blocked.",
+							"Ask before changes and command execution.",
+							"Allow workspace edits; ask before commands and higher-risk actions."
+						],
+						"default": "ask",
+						"scope": "application",
+						"description": "Approval mode used when a new chat starts."
+					}
+				}
+			},
+			{
+				"title": "Pi Agent: Context",
+				"order": 40,
+				"properties": {
+					"piAgent.context.maxFileBytes": {
+						"type": "integer",
+						"default": 524288,
+						"minimum": 1024,
+						"maximum": 10485760,
+						"scope": "application",
+						"tags": [
+							"advanced"
+						],
+						"description": "Maximum size of one context file in bytes."
+					},
+					"piAgent.context.maxFolderFiles": {
+						"type": "integer",
+						"default": 200,
+						"minimum": 1,
+						"maximum": 2000,
+						"scope": "application",
+						"tags": [
+							"advanced"
+						],
+						"description": "Maximum number of files resolved from one context folder."
+					},
+					"piAgent.context.maxTotalBytes": {
+						"type": "integer",
+						"default": 2097152,
+						"minimum": 1024,
+						"maximum": 8388608,
+						"scope": "application",
+						"tags": [
+							"advanced"
+						],
+						"description": "Maximum total context read for one prompt in bytes (up to the 8 MiB safety limit; serialized prompt budgeting may omit content)."
+					}
+				}
+			}
+		],
+		"colors": [
+			{
+				"id": "piAgent.tab.runningForeground",
+				"description": "Running indicator color in Pi Agent chat tabs.",
+				"defaults": {
+					"dark": "progressBar.background",
+					"light": "progressBar.background",
+					"highContrast": "progressBar.background",
+					"highContrastLight": "progressBar.background"
+				}
+			},
+			{
+				"id": "piAgent.status.readyForeground",
+				"description": "Foreground of Pi Agent ready states.",
+				"defaults": {
+					"dark": "testing.iconPassed",
+					"light": "testing.iconPassed",
+					"highContrast": "testing.iconPassed",
+					"highContrastLight": "testing.iconPassed"
+				}
+			},
+			{
+				"id": "piAgent.status.errorForeground",
+				"description": "Foreground of Pi Agent error and denied states.",
+				"defaults": {
+					"dark": "errorForeground",
+					"light": "errorForeground",
+					"highContrast": "errorForeground",
+					"highContrastLight": "errorForeground"
+				}
+			}
+		]
+	}
+}

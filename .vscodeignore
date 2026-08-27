@@ -1,0 +1,61 @@
+.git/**
+.github/**
+.vscode/**
+docs/**
+src/**
+scripts/**
+test/**
+coverage/**
+.vscode-test/**
+.vscode-test.*
+.gitignore
+biome.json
+tsconfig.json
+bun.lock
+dist/**/*.map
+dist/test/**
+*.vsix
+CONTRIBUTING.md
+SECURITY.md
+
+# The Pi SDK is deliberately external to the extension bundle. Do not ignore
+# node_modules here: vsce must include the production dependency graph.
+node_modules/**/.github/**
+node_modules/**/__tests__/**
+node_modules/**/coverage/**
+node_modules/**/docs/**
+node_modules/**/example/**
+node_modules/**/examples/**
+node_modules/**/test/**
+node_modules/**/tests/**
+node_modules/**/CHANGELOG*
+node_modules/**/HISTORY*
+node_modules/**/README*
+node_modules/**/npm-shrinkwrap.json
+node_modules/**/package-lock.json
+node_modules/**/yarn.lock
+node_modules/**/*.d.cts
+node_modules/**/*.d.mts
+node_modules/**/*.d.ts
+node_modules/**/*.map
+node_modules/@earendil-works/pi-coding-agent/dist/bundle/**
+
+# The Extension Host never uses Pi's terminal clipboard feature. Its dynamic
+# loader safely falls back when this optional native wrapper is absent. Keeping
+# every OS sidecar out makes one reproducible, platform-independent VSIX.
+node_modules/@mariozechner/clipboard/**
+node_modules/@mariozechner/clipboard-*/**
+
+# Pi's default system prompt points to these installed, read-only resources
+# when users ask about Pi, its SDK, skills, themes, or extensions.
+!node_modules/@earendil-works/pi-coding-agent/README.md
+!node_modules/@earendil-works/pi-coding-agent/docs/**
+!node_modules/@earendil-works/pi-coding-agent/examples/**/*.md
+!node_modules/@earendil-works/pi-coding-agent/examples/**/*.ts
+!node_modules/@earendil-works/pi-coding-agent/examples/**/*.json
+!node_modules/@earendil-works/pi-coding-agent/examples/**/*.c
+!node_modules/@earendil-works/pi-coding-agent/examples/**/*.sh
+
+# Keep the readable example source but not its precompiled third-party DOOM
+# derivative. The build script points maintainers to the corresponding source.
+node_modules/@earendil-works/pi-coding-agent/examples/extensions/doom-overlay/doom/build/**
