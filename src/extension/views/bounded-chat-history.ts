@@ -9,6 +9,7 @@ import type {
 export const MAX_RETAINED_MESSAGES = 256;
 export const MAX_RETAINED_HISTORY_BYTES = 4 * 1024 * 1024;
 export const MAX_TRACKED_TURN_TOOLS = 128;
+export const MAX_THOUGHT_BYTES = 256 * 1024;
 const MAX_MESSAGE_BYTES = 1024 * 1024;
 const MAX_TEXT_BYTES = 512 * 1024;
 const MAX_TOOL_ITEMS = 64;
@@ -92,23 +93,43 @@ function byteSize(message: ChatMessage): number {
 	return utf8Bytes(JSON.stringify(message));
 }
 
+function omitEmptyThought(message: ChatMessage, thought: string | undefined): ChatMessage {
+	const { thought: _ignored, ...rest } = message;
+	return thought && thought.length > 0 ? { ...rest, thought } : rest;
+}
+
 export function boundChatMessage(message: ChatMessage): ChatMessage {
-	let bounded: ChatMessage = {
-		...message,
-		id: truncateUtf8(message.id, 256),
-		text: truncateUtf8(message.text, MAX_TEXT_BYTES),
-		...(message.contexts === undefined ? {} : { contexts: boundedContexts(message.contexts) }),
-		...(message.tools === undefined ? {} : { tools: boundedTools(message.tools) }),
-		...(message.edits === undefined ? {} : { edits: boundedEdits(message.edits) }),
-		...(message.references === undefined
-			? {}
-			: { references: boundedReferences(message.references) }),
-	};
-	const size = byteSize(bounded);
+	const thought =
+		message.thought && message.thought.length > 0
+			? truncateUtf8(message.thought, MAX_THOUGHT_BYTES)
+			: undefined;
+	let bounded = omitEmptyThought(
+		{
+			...message,
+			id: truncateUtf8(message.id, 256),
+			text: truncateUtf8(message.text, MAX_TEXT_BYTES),
+			...(message.contexts === undefined ? {} : { contexts: boundedContexts(message.contexts) }),
+			...(message.tools === undefined ? {} : { tools: boundedTools(message.tools) }),
+			...(message.edits === undefined ? {} : { edits: boundedEdits(message.edits) }),
+			...(message.references === undefined
+				? {}
+				: { references: boundedReferences(message.references) }),
+		},
+		thought,
+	);
+	let size = byteSize(bounded);
+	if (size > MAX_MESSAGE_BYTES && bounded.thought) {
+		const overflow = size - MAX_MESSAGE_BYTES;
+		const thoughtBudget = Math.max(0, utf8Bytes(bounded.thought) - overflow);
+		bounded = omitEmptyThought(
+			bounded,
+			thoughtBudget > 0 ? truncateUtf8(bounded.thought, thoughtBudget) : "",
+		);
+		size = byteSize(bounded);
+	}
 	if (size <= MAX_MESSAGE_BYTES) return bounded;
 	const textBudget = Math.max(0, utf8Bytes(bounded.text) - (size - MAX_MESSAGE_BYTES) - 1_024);
-	bounded = { ...bounded, text: truncateUtf8(bounded.text, textBudget) };
-	return bounded;
+	return { ...bounded, text: truncateUtf8(bounded.text, textBudget) };
 }
 
 /** Keeps the current user turn plus the newest history within strict count/byte budgets. */

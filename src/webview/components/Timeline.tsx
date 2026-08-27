@@ -68,28 +68,98 @@ function ToolPanel({ tools }: { readonly tools: readonly ToolItem[] }) {
 	);
 }
 
+function ThinkingStatusMark() {
+	return (
+		<span class="thinking-status-mark" aria-hidden="true">
+			<span />
+			<span />
+			<span />
+		</span>
+	);
+}
+
 function ThinkingIndicator({
 	progress,
+	thought = "",
 	compact = false,
+	working = false,
 }: {
 	readonly progress: string;
+	readonly thought?: string;
 	readonly compact?: boolean;
+	readonly working?: boolean;
 }) {
+	const [open, setOpen] = useState(false);
+	const transcriptRef = useRef<HTMLPreElement>(null);
+	const transcriptId = `thought-${useId()}`;
 	const label = progress.trim() || "ご依頼の内容を確認しています";
+	const hasThought = thought.length > 0;
+	const heading = working ? label : "思考過程";
+
+	useEffect(() => {
+		if (!open || !working) return;
+		transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight });
+	}, [open, thought.length, working]);
+
+	if (!working && !hasThought) return null;
+
+	const statusCopy = (
+		<>
+			{working ? <ThinkingStatusMark /> : null}
+			<span class="thinking-label">{heading}</span>
+			{hasThought && working && !open ? <span class="thinking-cursor" aria-hidden="true" /> : null}
+			{hasThought ? (
+				<span class={`disclosure-chevron ${open ? "open" : ""}`} aria-hidden="true">
+					›
+				</span>
+			) : null}
+		</>
+	);
+
 	return (
-		<section
-			class={`thinking-indicator ${compact ? "compact" : ""}`}
-			role="status"
-			aria-live="polite"
-			aria-atomic="true"
-			aria-label={`Pi Agent の作業状況: ${label}`}
-		>
-			<span class="thinking-status-mark" aria-hidden="true">
-				<span />
-				<span />
-				<span />
-			</span>
-			<span class="thinking-label">{label}</span>
+		<section class={`thinking-indicator ${compact ? "compact" : ""} ${open ? "open" : ""}`}>
+			{hasThought ? (
+				<button
+					class="thinking-toggle"
+					type="button"
+					aria-expanded={open}
+					aria-controls={transcriptId}
+					aria-label={
+						working
+							? `思考過程${open ? "を閉じる" : "を開く"}。作業状況: ${label}`
+							: `思考過程${open ? "を閉じる" : "を開く"}`
+					}
+					onClick={() => setOpen((current) => !current)}
+				>
+					{statusCopy}
+				</button>
+			) : (
+				<div
+					class="thinking-status"
+					role="status"
+					aria-live="polite"
+					aria-atomic="true"
+					aria-label={`Pi Agent の作業状況: ${label}`}
+				>
+					{statusCopy}
+				</div>
+			)}
+			{working && hasThought ? (
+				<span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+					{label}
+				</span>
+			) : null}
+			{hasThought ? (
+				<pre
+					ref={transcriptRef}
+					id={transcriptId}
+					class={`thinking-transcript ${open ? "expanded" : "collapsed"}`}
+					aria-hidden={!open}
+				>
+					<code>{thought}</code>
+					{working ? <span class="thinking-cursor" aria-hidden="true" /> : null}
+				</pre>
+			) : null}
 		</section>
 	);
 }
@@ -175,10 +245,12 @@ function MessageCard({
 					? "Error"
 					: "Pi Agent";
 	const tools = message.tools ?? [];
+	const thought = message.thought ?? "";
 	const isWorking = message.role === "assistant" && active;
 	const isSettled =
 		message.role === "assistant" && settled && !active && message.streaming !== true;
 	const showToolPanel = tools.length > 0 && (showLiveTools || isSettled);
+	const showThinking = isWorking || thought.length > 0;
 	const messageBody = (
 		<>
 			<Markdown
@@ -224,13 +296,17 @@ function MessageCard({
 						<div class="assistant-activity-line">
 							<strong class="sr-only">Pi</strong>
 							<div class="assistant-activity-content">
-								{showToolPanel ? (
-									<ToolPanel key={toolPanelKey} tools={tools} />
-								) : isWorking ? (
-									<ThinkingIndicator progress={progress} compact={message.text.trim().length > 0} />
-								) : (
+								{showThinking ? (
+									<ThinkingIndicator
+										progress={progress}
+										thought={thought}
+										compact={message.text.trim().length > 0}
+										working={isWorking}
+									/>
+								) : showToolPanel ? null : (
 									<span class="assistant-name">Pi</span>
 								)}
+								{showToolPanel ? <ToolPanel key={toolPanelKey} tools={tools} /> : null}
 							</div>
 							{isWorking ? null : <MessageTime timestamp={message.timestamp} />}
 						</div>
@@ -396,7 +472,7 @@ export function Timeline({
 		if (phase === "running" && followLatestRef.current) {
 			endRef.current?.scrollIntoView({ block: "end" });
 		}
-	}, [lastMessage?.id, lastMessage?.text.length, phase]);
+	}, [lastMessage?.id, lastMessage?.text.length, lastMessage?.thought?.length, phase]);
 
 	const updateFollowState = () => {
 		const element = timelineRef.current;
@@ -503,7 +579,7 @@ export function Timeline({
 							<div class="assistant-activity-line">
 								<strong class="sr-only">Pi</strong>
 								<div class="assistant-activity-content">
-									<ThinkingIndicator progress={progress} />
+									<ThinkingIndicator progress={progress} working />
 								</div>
 							</div>
 						</div>

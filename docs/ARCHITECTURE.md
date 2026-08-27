@@ -74,6 +74,8 @@ The prose below is the authoritative flow; the diagram above is only a summary.
    secret-shaped values, and emits extension-owned DTOs rather than SDK objects.
 6. `ChatSessionController` drops events for another session or an older generation.
    `ChatWorkspaceModel` then updates messages, phase, tools, edits, model state, and live usage.
+   Thinking deltas accumulate on the assistant message as a bounded `thought` field. The status
+   label stays a rule-based Japanese summary and does not include chain-of-thought.
 7. `ChatViewProvider` serializes and coalesces snapshot work, validates the Host-to-Webview schema,
    and posts the latest `AppSnapshot`. The Webview store applies it and Preact renders the result.
 
@@ -164,7 +166,8 @@ storage, reporting, and telemetry rules.
 
 - Model streaming UI refreshes are debounced; statistics previews are throttled by the Pi host.
 - Protocol arrays, messages, tool details, prompts, images, context bytes, folder traversal, and
-  retained replay IDs all have explicit upper bounds. Context resolution is capped at 8 MiB and
+  retained replay IDs all have explicit upper bounds. Assistant thought text is truncated before
+  answer text when a message exceeds the per-message budget. Context resolution is capped at 8 MiB and
   2,048 aggregate attachment records; one configured folder can still contribute up to 2,000
   files before the shared byte and metadata budgets apply.
 - The current snapshot contains only the active chat history. Inactive tabs keep lightweight status

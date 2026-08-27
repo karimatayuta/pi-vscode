@@ -310,6 +310,35 @@ describe("Pi event mapping", () => {
 		expect(displayed).toBe("hello");
 	});
 
+	test("does not append the final thinking block a second time at thinking_end", () => {
+		const updates = [
+			mapPiSessionEvent({
+				type: "message_update",
+				message: { role: "assistant", content: [{ type: "thinking", text: "plan" }] },
+				assistantMessageEvent: { type: "thinking_delta", delta: "plan" },
+			}),
+			mapPiSessionEvent({
+				type: "message_update",
+				message: { role: "assistant", content: [{ type: "thinking", text: "plan" }] },
+				assistantMessageEvent: { type: "thinking_end", content: "plan" },
+			}),
+		];
+		const deltas = updates
+			.flatMap(({ events }) => events)
+			.filter((event) => event.type === "message.update")
+			.map((event) => event.delta);
+		const displayed = deltas.reduce(
+			(text, delta) => (delta.kind === "thinking" ? text + (delta.text ?? "") : text),
+			"",
+		);
+
+		expect(deltas).toEqual([
+			{ kind: "thinking", text: "plan" },
+			{ kind: "status", text: "thinking_end" },
+		]);
+		expect(displayed).toBe("plan");
+	});
+
 	test("marks absent streamed cost data as unknown", () => {
 		expect(
 			toMessageDto({

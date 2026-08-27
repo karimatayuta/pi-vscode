@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { PiStreamDeltaDto } from "../../src/extension/pi/types.js";
 import {
+	classifyUserTask,
 	summarizeSessionActivity,
 	summarizeStreamActivity,
 	summarizeToolActivity,
@@ -14,6 +15,25 @@ describe("Japanese activity summaries", () => {
 			"ファイル添付",
 		);
 		expect(taskFocusFromUserText("未知の依頼 API_KEY=very-secret-value")).toBe("ご依頼");
+	});
+
+	test("classifies the requested action so thinking copy can name the work", () => {
+		expect(classifyUserTask("認証フローから重複した token 更新処理を除いて")).toEqual({
+			subject: "認証処理",
+			intent: "remove",
+		});
+		expect(classifyUserTask("チャット入力欄へファイルをドラッグ＆ドロップしたい")).toEqual({
+			subject: "ファイル添付",
+			intent: "add",
+		});
+		expect(classifyUserTask("ログイン失敗の原因を調べて")).toEqual({
+			subject: "認証処理",
+			intent: "investigate",
+		});
+		expect(classifyUserTask("未知の依頼 API_KEY=very-secret-value")).toEqual({
+			subject: "ご依頼",
+			intent: "generic",
+		});
 	});
 
 	test("describes file tools with a bounded workspace-style path", () => {
@@ -52,10 +72,38 @@ describe("Japanese activity summaries", () => {
 			kind: "thinking",
 			text: "private reasoning API_KEY=very-secret-value",
 		} satisfies PiStreamDeltaDto;
-		const summary = summarizeStreamActivity(privateDelta, "認証処理");
-		expect(summary).toBe("認証処理の進め方を整理しています");
+		const summary = summarizeStreamActivity(
+			privateDelta,
+			"認証フローから重複した token 更新処理を除いて",
+		);
+		expect(summary).toBe("認証処理から除く範囲を確認しています");
 		expect(summary).not.toContain("private reasoning");
 		expect(summary).not.toContain("very-secret-value");
+	});
+
+	test("names the task and next step while thinking, instead of a generic planning phrase", () => {
+		const thinking = { kind: "thinking" as const };
+		expect(
+			summarizeStreamActivity(thinking, "チャット入力欄へファイルをドラッグ＆ドロップしたい"),
+		).toBe("ファイル添付の作り方を決めています");
+		expect(summarizeStreamActivity(thinking, "ログイン失敗の原因を調べて")).toBe(
+			"認証処理の原因を洗い出しています",
+		);
+		expect(summarizeStreamActivity(thinking, "未知の依頼 API_KEY=very-secret-value")).toBe(
+			"依頼内容を確認し、着手点を決めています",
+		);
+		expect(
+			summarizeSessionActivity("running", "認証フローから重複した token 更新処理を除いて"),
+		).toBe("認証処理から除く範囲を確認しています");
+		expect(summarizeSessionActivity("running", "ご依頼")).toBe(
+			"依頼内容を確認し、着手点を決めています",
+		);
+		expect(
+			summarizeStreamActivity(thinking, {
+				subject: "認証処理",
+				intent: "remove",
+			}),
+		).toBe("認証処理から除く範囲を確認しています");
 	});
 
 	test("uses stable Japanese copy for lifecycle phases", () => {

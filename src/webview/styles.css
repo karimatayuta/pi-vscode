@@ -1635,16 +1635,38 @@ kbd {
 	display: flex;
 	min-width: 0;
 	max-width: 100%;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 0;
+	padding: 0;
+	color: var(--pi-muted);
+}
+
+.thinking-toggle,
+.thinking-status {
+	display: flex;
+	min-width: 0;
+	max-width: 100%;
 	min-height: 30px;
 	align-items: center;
 	gap: 8px;
 	padding: 3px 2px;
-	color: var(--pi-muted);
+	border: 0;
+	border-radius: 5px;
+	color: inherit;
+	background: transparent;
+	font: inherit;
+	text-align: left;
 }
 
-.thinking-indicator.compact {
+.thinking-toggle:hover,
+.thinking-toggle:focus-visible {
+	background: color-mix(in srgb, var(--pi-surface), transparent 28%);
+}
+
+.thinking-indicator.compact > .thinking-toggle,
+.thinking-indicator.compact > .thinking-status {
 	min-height: 26px;
-	margin-top: 2px;
 	padding-block: 1px;
 }
 
@@ -1686,10 +1708,62 @@ kbd {
 	white-space: normal;
 }
 
+.thinking-cursor {
+	display: inline-block;
+	width: 2px;
+	height: 0.85em;
+	flex: 0 0 auto;
+	margin-left: 2px;
+	background: currentColor;
+	opacity: 0.7;
+	animation: thinking-cursor 1s steps(2) infinite;
+}
+
+.thinking-transcript {
+	margin: 0 0 2px 4px;
+	padding: 6px 8px 6px 12px;
+	border: 0;
+	border-left: 1px solid color-mix(in srgb, var(--pi-border), transparent 35%);
+	color: color-mix(in srgb, var(--pi-text), var(--pi-muted) 32%);
+	background: transparent;
+	font-family: var(--pi-font-code);
+	font-size: 0.82rem;
+	line-height: 1.45;
+	overflow-wrap: anywhere;
+	white-space: pre-wrap;
+}
+
+.thinking-transcript.collapsed {
+	display: none;
+}
+
+.thinking-transcript.expanded {
+	display: block;
+	max-height: 12.5rem;
+	overflow: auto;
+}
+
+.thinking-transcript > code {
+	font: inherit;
+}
+
+.assistant-activity-content {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 0;
+}
+
 .assistant-activity-content > .thinking-indicator,
 .assistant-activity-content > .thinking-indicator.compact {
 	min-height: 28px;
 	margin-top: 0;
+	padding: 0;
+}
+
+.assistant-activity-content > .thinking-indicator > .thinking-toggle,
+.assistant-activity-content > .thinking-indicator > .thinking-status {
+	min-height: 28px;
 	padding: 0;
 }
 
@@ -2600,6 +2674,17 @@ kbd {
 	}
 }
 
+@keyframes thinking-cursor {
+	0%,
+	49% {
+		opacity: 0.75;
+	}
+	50%,
+	100% {
+		opacity: 0;
+	}
+}
+
 @media (max-width: 390px) {
 	.wide-only {
 		display: none;
@@ -2730,13 +2815,18 @@ kbd {
 
 	.status-icon.running,
 	.tool-row.running .tool-state,
-	.thinking-status-mark > span {
+	.thinking-status-mark > span,
+	.thinking-cursor {
 		animation: none;
 	}
 
 	.thinking-status-mark > span {
 		opacity: 0.65;
 		transform: none;
+	}
+
+	.thinking-cursor {
+		opacity: 0.65;
 	}
 
 	.status-icon.running,
@@ -2758,11 +2848,13 @@ kbd {
 
 body.vscode-reduce-motion .status-icon.running,
 body.vscode-reduce-motion .tool-row.running .tool-state,
-body.vscode-reduce-motion .thinking-status-mark > span {
+body.vscode-reduce-motion .thinking-status-mark > span,
+body.vscode-reduce-motion .thinking-cursor {
 	animation: none;
 }
 
-body.vscode-reduce-motion .thinking-status-mark > span {
+body.vscode-reduce-motion .thinking-status-mark > span,
+body.vscode-reduce-motion .thinking-cursor {
 	opacity: 0.65;
 	transform: none;
 }

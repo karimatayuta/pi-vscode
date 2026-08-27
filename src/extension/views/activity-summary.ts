@@ -10,6 +10,42 @@ const MAX_LABEL_LENGTH = 44;
 
 export type ToolActivityPhase = "start" | "update" | "end";
 
+export type TaskIntent =
+	| "fix"
+	| "add"
+	| "remove"
+	| "investigate"
+	| "test"
+	| "explain"
+	| "review"
+	| "refactor"
+	| "configure"
+	| "document"
+	| "generic";
+
+export interface TaskFocus {
+	readonly subject: string;
+	readonly intent: TaskIntent;
+}
+
+export const DEFAULT_TASK_FOCUS: TaskFocus = { subject: "ご依頼", intent: "generic" };
+
+const TASK_INTENTS = new Set<TaskIntent>([
+	"fix",
+	"add",
+	"remove",
+	"investigate",
+	"test",
+	"explain",
+	"review",
+	"refactor",
+	"configure",
+	"document",
+	"generic",
+]);
+
+type ActivityFocus = string | TaskFocus;
+
 function truncate(value: string, maxLength: number): string {
 	const characters = [...value];
 	if (characters.length <= maxLength) return value;
@@ -48,8 +84,18 @@ function boundedActivity(value: string): string {
 	return truncate(safe || "ご依頼の内容を確認しています", MAX_ACTIVITY_LENGTH);
 }
 
-function safeFocus(value: string): string {
-	return taskFocusFromUserText(value);
+function resolveTaskFocus(value: ActivityFocus): TaskFocus {
+	if (typeof value === "object") {
+		return {
+			subject: taskSubjectFromText(value.subject),
+			intent: TASK_INTENTS.has(value.intent) ? value.intent : "generic",
+		};
+	}
+	return classifyUserTask(value);
+}
+
+function resolveSubject(value: ActivityFocus): string {
+	return resolveTaskFocus(value).subject;
 }
 
 function stringArgument(args: PiToolEventDto["args"], key: string): string | undefined {
@@ -117,12 +163,12 @@ function commandActivity(
 		: `${focus}に必要な処理を実行しています`;
 }
 
-/**
- * Converts a user request into a deliberately small, non-sensitive topic label.
- * This is a rule-based classifier, not a transcript or chain-of-thought summary.
- */
-export function taskFocusFromUserText(value: string): string {
-	const text = stripUnsafeText(value).toLocaleLowerCase();
+function normalizedRequestText(value: string): string {
+	return stripUnsafeText(value).toLocaleLowerCase();
+}
+
+function taskSubjectFromText(value: string): string {
+	const text = normalizedRequestText(value);
 	if (!text) return "ご依頼";
 	if (/(?:認証|ログイン|サインイン|oauth|authentication|auth\b|login|token)/u.test(text)) {
 		return "認証処理";
@@ -142,12 +188,89 @@ export function taskFocusFromUserText(value: string): string {
 	return "ご依頼";
 }
 
+function taskIntentFromText(value: string): TaskIntent {
+	const text = normalizedRequestText(value);
+	if (!text) return "generic";
+	if (/(?:除いて|取り除|削除|消して|除去|重複|\bremove\b|\bdelete\b)/u.test(text)) return "remove";
+	if (/(?:リファクタ|整理して|きれいに|refactor)/u.test(text)) return "refactor";
+	if (/(?:なぜ|なんで|原因|調査|調べ|再現|why\b|investigate|root cause)/u.test(text)) {
+		return "investigate";
+	}
+	if (/(?:説明|教えて|とは|どういう|what is|explain)/u.test(text)) return "explain";
+	if (/(?:テスト|検証|test|spec|vitest|jest)/u.test(text)) return "test";
+	if (/(?:readme|文書|ドキュメント|documentation|docs)/u.test(text)) return "document";
+	if (/(?:設定|config|configuration|settings)/u.test(text)) return "configure";
+	if (/(?:修正|直して|直したい|直す|バグ|不具合|エラー|失敗|error|bug|fix)/u.test(text)) {
+		return "fix";
+	}
+	if (/(?:追加|実装|入れて|作って|作りたい|対応して|add|implement|create|feature)/u.test(text)) {
+		return "add";
+	}
+	if (/(?:レビュー|見直|確認して|見て|review)/u.test(text)) return "review";
+	if (/(?:したい|ほしい)/u.test(text)) return "add";
+	return "generic";
+}
+
+function thinkingActivity(focus: TaskFocus): string {
+	const named = focus.subject !== "ご依頼";
+	const subject = focus.subject;
+	switch (focus.intent) {
+		case "fix":
+			return named ? `${subject}の直す箇所を探しています` : "直す箇所を探しています";
+		case "add":
+			return named ? `${subject}の作り方を決めています` : "追加する内容の作り方を決めています";
+		case "remove":
+			return named ? `${subject}から除く範囲を確認しています` : "除く範囲を確認しています";
+		case "investigate":
+			return named ? `${subject}の原因を洗い出しています` : "原因を洗い出しています";
+		case "test":
+			return named && subject !== "テスト"
+				? `${subject}の確かめ方を決めています`
+				: "確かめ方を決めています";
+		case "explain":
+			return named ? `${subject}の説明をまとめています` : "説明をまとめています";
+		case "review":
+			return named
+				? `${subject}の確認ポイントを洗い出しています`
+				: "確認ポイントを洗い出しています";
+		case "refactor":
+			return named ? `${subject}の整理の仕方を決めています` : "整理の仕方を決めています";
+		case "configure":
+			return named && subject !== "設定"
+				? `${subject}の設定内容を確認しています`
+				: "設定内容を確認しています";
+		case "document":
+			return named && subject !== "ドキュメント"
+				? `${subject}の説明の書き方を決めています`
+				: "説明の書き方を決めています";
+		default:
+			return named ? `${subject}の着手点を決めています` : "依頼内容を確認し、着手点を決めています";
+	}
+}
+
+/**
+ * Converts a user request into a deliberately small, non-sensitive topic label.
+ * This is a rule-based classifier, not a transcript or chain-of-thought summary.
+ */
+export function classifyUserTask(value: string): TaskFocus {
+	const text = normalizedRequestText(value);
+	if (!text) return DEFAULT_TASK_FOCUS;
+	return {
+		subject: taskSubjectFromText(text),
+		intent: taskIntentFromText(text),
+	};
+}
+
+export function taskFocusFromUserText(value: string): string {
+	return classifyUserTask(value).subject;
+}
+
 export function summarizeToolActivity(
 	tool: Pick<PiToolEventDto, "toolName" | "args" | "isError">,
-	focus: string,
+	focus: ActivityFocus,
 	phase: ToolActivityPhase,
 ): string {
-	const subject = safeFocus(focus);
+	const subject = resolveSubject(focus);
 	const name = normalizedToolName(tool.toolName);
 	const path = safePathLabel(stringArgument(tool.args, "path"));
 	const command = stringArgument(tool.args, "command");
@@ -206,31 +329,34 @@ export function summarizeToolActivity(
 
 export function summarizeStreamActivity(
 	delta: Pick<PiStreamDeltaDto, "kind" | "toolName">,
-	focus: string,
+	focus: ActivityFocus,
 ): string {
-	const subject = safeFocus(focus);
-	if (delta.kind === "text") return boundedActivity(`${subject}について回答をまとめています`);
+	const task = resolveTaskFocus(focus);
+	if (delta.kind === "text") return boundedActivity(`${task.subject}について回答をまとめています`);
 	if (delta.kind === "tool" && delta.toolName) {
-		return summarizeToolActivity({ toolName: delta.toolName }, subject, "start");
+		return summarizeToolActivity({ toolName: delta.toolName }, task, "start");
 	}
-	if (delta.kind === "tool") return boundedActivity(`${subject}に必要な操作を準備しています`);
-	if (delta.kind === "status") return boundedActivity(`${subject}の作業状況を確認しています`);
+	if (delta.kind === "tool") return boundedActivity(`${task.subject}に必要な操作を準備しています`);
+	if (delta.kind === "status") return boundedActivity(`${task.subject}の作業状況を確認しています`);
 	// Intentionally ignore delta.text. It can contain private chain-of-thought.
-	return boundedActivity(`${subject}の進め方を整理しています`);
+	return boundedActivity(thinkingActivity(task));
 }
 
-export function summarizeSessionActivity(phase: PiSessionPhase, focus: string): string {
-	const subject = safeFocus(focus);
+export function summarizeSessionActivity(phase: PiSessionPhase, focus: ActivityFocus): string {
+	const task = resolveTaskFocus(focus);
 	if (phase === "compacting") return "会話のコンテキストを整理しています";
 	if (phase === "retrying") return "一時的な問題から処理を再開しています";
-	if (phase === "streaming") return boundedActivity(`${subject}について回答をまとめています`);
-	if (phase === "running") return boundedActivity(`${subject}の進め方を整理しています`);
-	if (phase === "tool") return boundedActivity(`${subject}に必要な操作を進めています`);
+	if (phase === "streaming") return boundedActivity(`${task.subject}について回答をまとめています`);
+	if (phase === "running") return boundedActivity(thinkingActivity(task));
+	if (phase === "tool") return boundedActivity(`${task.subject}に必要な操作を進めています`);
 	if (phase === "closing") return "セッションを終了しています";
 	return "待機中";
 }
 
-export function summarizeSnapshotActivity(snapshot: PiSessionSnapshotDto, focus: string): string {
+export function summarizeSnapshotActivity(
+	snapshot: PiSessionSnapshotDto,
+	focus: ActivityFocus,
+): string {
 	if (snapshot.phase === "tool" && snapshot.activeTools[0]) {
 		return summarizeToolActivity({ toolName: snapshot.activeTools[0] }, focus, "update");
 	}

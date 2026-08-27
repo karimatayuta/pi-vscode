@@ -264,6 +264,24 @@ describe("host -> Webview protocol", () => {
 		).toBe(false);
 	});
 
+	test("accepts bounded assistant thought and rejects oversized thought", () => {
+		const withThought = {
+			...snapshot,
+			messages: {
+				"chat-1": [{ ...snapshot.messages["chat-1"]?.[0], thought: "Plan the auth change" }],
+			},
+		};
+		expect(validateAppSnapshot(withThought).ok).toBe(true);
+		expect(
+			validateAppSnapshot({
+				...snapshot,
+				messages: {
+					"chat-1": [{ ...snapshot.messages["chat-1"]?.[0], thought: "x".repeat(512_001) }],
+				},
+			}).ok,
+		).toBe(false);
+	});
+
 	test("carries only the selected chat history in each snapshot", () => {
 		const secondTab = {
 			...snapshot.tabs[0],

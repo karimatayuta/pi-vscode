@@ -5,14 +5,17 @@ import type {
 	PiSessionSnapshotDto,
 } from "../../src/extension/pi/types.js";
 import {
+	appendAssistantDelta,
 	createPiPrompt,
 	MAX_COMMAND_SUGGESTIONS,
 	MAX_MODEL_OPTIONS,
 	mergeCommandSuggestions,
 	modelOptionsFromCatalog,
 	modelStateFromSnapshot,
+	preferredThought,
 	STRUCTURED_PROMPT_PREFIX,
 	textFromPiMessage,
+	thoughtFromPiMessage,
 	usageFromSnapshot,
 } from "../../src/extension/views/chat-mapping.js";
 import {
@@ -260,5 +263,38 @@ describe("chat host-to-view mapping", () => {
 				})),
 			),
 		).toHaveLength(MAX_COMMAND_SUGGESTIONS);
+	});
+
+	test("extracts thinking blocks without mixing them into visible answer text", () => {
+		const message: PiMessageDto = {
+			role: "assistant",
+			content: [
+				{ type: "thinking", text: "First consider auth." },
+				{ type: "text", text: "I will update the flow." },
+				{ type: "thinking", text: "Then confirm tests." },
+			],
+		};
+		expect(textFromPiMessage(message)).toBe("I will update the flow.");
+		expect(thoughtFromPiMessage(message)).toBe("First consider auth.\n\nThen confirm tests.");
+		expect(
+			thoughtFromPiMessage({ role: "assistant", content: [{ type: "text", text: "Hi" }] }),
+		).toBe("");
+	});
+
+	test("accumulates thinking deltas and ignores thinking_end status events", () => {
+		const base = { id: "a1", role: "assistant" as const, text: "", timestamp: 1 };
+		const afterThought = appendAssistantDelta(base, { kind: "thinking", text: "plan " });
+		expect(afterThought).toMatchObject({ thought: "plan ", streaming: true, text: "" });
+		const afterMore = appendAssistantDelta(afterThought, { kind: "thinking", text: "auth" });
+		expect(afterMore.thought).toBe("plan auth");
+		expect(appendAssistantDelta(afterMore, { kind: "status", text: "thinking_end" })).toBe(
+			afterMore,
+		);
+		expect(appendAssistantDelta(afterMore, { kind: "text", text: "Done." }).text).toBe("Done.");
+		expect(preferredThought("streamed thought that survived 64k dto cap", "short dto")).toBe(
+			"streamed thought that survived 64k dto cap",
+		);
+		expect(preferredThought(undefined, "from history")).toBe("from history");
+		expect(preferredThought(undefined, "")).toBeUndefined();
 	});
 });

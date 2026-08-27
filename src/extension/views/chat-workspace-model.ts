@@ -47,19 +47,24 @@ import type {
 } from "../pi/types.js";
 import type { WorkspaceTrustState } from "../workspace-trust-transition.js";
 import {
+	classifyUserTask,
+	DEFAULT_TASK_FOCUS,
 	summarizeSessionActivity,
 	summarizeSnapshotActivity,
 	summarizeStreamActivity,
 	summarizeToolActivity,
-	taskFocusFromUserText,
+	type TaskFocus,
 } from "./activity-summary.js";
 import { boundChatHistory, boundChatMessage } from "./bounded-chat-history.js";
 import {
+	appendAssistantDelta,
 	createPiPrompt,
 	mergeCommandSuggestions,
 	modelOptionsFromCatalog,
 	modelStateFromSnapshot,
+	preferredThought,
 	textFromPiMessage,
+	thoughtFromPiMessage,
 	usageFromSnapshot,
 } from "./chat-mapping.js";
 import { commitChatTitle } from "./chat-title-transaction.js";
@@ -83,7 +88,7 @@ interface ChatRecord {
 	manualTitle: boolean;
 	phase: ChatPhase;
 	progress: string;
-	activityFocus: string;
+	activityFocus: TaskFocus;
 	unread: boolean;
 	messages: ChatMessage[];
 	commands: CommandSuggestion[];
@@ -404,7 +409,7 @@ export class ChatWorkspaceModel implements vscode.Disposable {
 		const normalized = text.trim();
 		if (!normalized) return;
 		record.toolTracker.reset();
-		record.activityFocus = taskFocusFromUserText(normalized);
+		record.activityFocus = classifyUserTask(normalized);
 		const attached = await this.contextStore.resolveForPrompt(contextIds);
 		const visibleContexts = this.contextStore.items.filter((item) => contextIds.includes(item.id));
 		record.messages.push({
@@ -809,7 +814,7 @@ export class ChatWorkspaceModel implements vscode.Disposable {
 			manualTitle: tab.manualTitle,
 			phase: "running",
 			progress: "Pi Agent を準備しています",
-			activityFocus: "ご依頼",
+			activityFocus: { ...DEFAULT_TASK_FOCUS },
 			unread: false,
 			messages: [],
 			commands: [...HOST_COMMANDS],
@@ -878,7 +883,7 @@ export class ChatWorkspaceModel implements vscode.Disposable {
 		const latestUserMessage = [...record.messages]
 			.reverse()
 			.find((message) => message.role === "user");
-		record.activityFocus = taskFocusFromUserText(latestUserMessage?.text ?? "");
+		record.activityFocus = classifyUserTask(latestUserMessage?.text ?? "");
 		record.commands = mergeCommandSuggestions(HOST_COMMANDS, bootstrap.commands);
 		record.phase = bootstrap.snapshot.busy ? "running" : "idle";
 		record.progress = summarizeSnapshotActivity(bootstrap.snapshot, record.activityFocus);
@@ -956,13 +961,11 @@ export class ChatWorkspaceModel implements vscode.Disposable {
 				record.messages.push(message);
 				messagesChanged = true;
 			}
-			if (event.delta.kind === "text" && event.delta.text) {
+			const next = appendAssistantDelta(message, event.delta);
+			if (next !== message) {
 				const index = record.messages.findIndex((item) => item.id === id);
-				record.messages[index] = boundChatMessage({
-					...message,
-					text: message.text + event.delta.text,
-					streaming: true,
-				});
+				record.messages[index] = boundChatMessage(next);
+				messagesChanged = true;
 			}
 			record.phase = "running";
 			record.progress = summarizeStreamActivity(event.delta, record.activityFocus);
@@ -971,7 +974,12 @@ export class ChatWorkspaceModel implements vscode.Disposable {
 			const existingIndex = id ? record.messages.findIndex((message) => message.id === id) : -1;
 			const existing = existingIndex >= 0 ? record.messages[existingIndex] : undefined;
 			const finalMessage = this.#chatMessage(record, event.message, id ?? randomUUID(), false);
-			const final = existing?.tools ? { ...finalMessage, tools: existing.tools } : finalMessage;
+			const thought = preferredThought(existing?.thought, thoughtFromPiMessage(event.message));
+			const final = {
+				...finalMessage,
+				...(existing?.tools ? { tools: existing.tools } : {}),
+				...(thought ? { thought } : {}),
+			};
 			if (existingIndex >= 0) record.messages[existingIndex] = final;
 			else record.messages.push(final);
 			record.currentAssistantId = undefined;
@@ -1040,6 +1048,7 @@ export class ChatWorkspaceModel implements vscode.Disposable {
 		streaming = false,
 	): ChatMessage {
 		const text = textFromPiMessage(message) || message.errorMessage || "";
+		const thought = thoughtFromPiMessage(message);
 		const role: ChatMessage["role"] =
 			message.role === "user"
 				? "user"
@@ -1055,6 +1064,7 @@ export class ChatWorkspaceModel implements vscode.Disposable {
 				text,
 				timestamp: message.timestamp ?? Date.now(),
 				...(streaming ? { streaming: true } : {}),
+				...(thought ? { thought } : {}),
 				...(role === "assistant" && record.proposedEdits.length > 0
 					? { edits: record.proposedEdits }
 					: {}),

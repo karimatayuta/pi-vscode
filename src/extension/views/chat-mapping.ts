@@ -7,6 +7,7 @@ import {
 	utf8Length,
 } from "../../shared/prompt-budget.js";
 import type {
+	ChatMessage,
 	CommandSuggestion,
 	ModelOption,
 	ModelState,
@@ -18,6 +19,7 @@ import type {
 	PiMessageDto,
 	PiModelCatalogDto,
 	PiSessionSnapshotDto,
+	PiStreamDeltaDto,
 } from "../pi/types.js";
 
 export const STRUCTURED_PROMPT_PREFIX = "PI_VSCODE_REQUEST_V1\n";
@@ -156,6 +158,35 @@ export function textFromPiMessage(message: PiMessageDto): string {
 	if (message.role !== "user") return text;
 
 	return structuredUserRequest(text) ?? text;
+}
+
+export function thoughtFromPiMessage(message: PiMessageDto): string {
+	return message.content
+		.filter((part) => part.type === "thinking")
+		.map((part) => (part.type === "thinking" ? part.text : ""))
+		.filter((text) => text.length > 0)
+		.join("\n\n");
+}
+
+export function preferredThought(
+	existing: string | undefined,
+	fromDto: string,
+): string | undefined {
+	const thought = (existing?.length ?? 0) >= fromDto.length ? (existing ?? "") : fromDto;
+	return thought.length > 0 ? thought : undefined;
+}
+
+export function appendAssistantDelta(
+	message: ChatMessage,
+	delta: Pick<PiStreamDeltaDto, "kind" | "text">,
+): ChatMessage {
+	if (delta.kind === "text" && delta.text) {
+		return { ...message, text: message.text + delta.text, streaming: true };
+	}
+	if (delta.kind === "thinking" && delta.text) {
+		return { ...message, thought: (message.thought ?? "") + delta.text, streaming: true };
+	}
+	return message;
 }
 
 export function usageFromSnapshot(snapshot: PiSessionSnapshotDto): UsageState {

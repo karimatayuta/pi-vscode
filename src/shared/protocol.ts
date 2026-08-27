@@ -78,6 +78,7 @@ export const ChatMessageSchema = v.object({
 	text: MessageTextSchema,
 	timestamp: v.pipe(v.number(), v.integer(), v.minValue(0)),
 	streaming: v.optional(v.boolean()),
+	thought: v.optional(v.pipe(v.string(), v.maxLength(512_000))),
 	contexts: v.optional(v.pipe(v.array(ContextChipSchema), v.maxLength(256))),
 	tools: v.optional(v.pipe(v.array(ToolItemSchema), v.maxLength(10_000))),
 	edits: v.optional(v.pipe(v.array(ProposedEditSchema), v.maxLength(1_000))),

@@ -21,8 +21,9 @@ describe("Pi assistant activity layout", () => {
 			'<AgentAvatar icon={agentIcon} className="assistant-avatar" />',
 		);
 		expect(timelineSource).toContain('class="assistant-message-main"');
+		expect(timelineSource).toContain("const showThinking = isWorking || thought.length > 0;");
 		expect(timelineSource).toMatch(
-			/\{showToolPanel \? \([\s\S]*?<ToolPanel key=\{toolPanelKey\} tools=\{tools\} \/>[\s\S]*?: isWorking \? \([\s\S]*?<ThinkingIndicator/u,
+			/\{showThinking \? \([\s\S]*?<ThinkingIndicator[\s\S]*?\{showToolPanel \? <ToolPanel key=\{toolPanelKey\} tools=\{tools\} \/> : null\}/u,
 		);
 		expect(styleSource).toMatch(
 			/\.assistant-message-layout \{[\s\S]*?grid-template-columns: 18px minmax\(0, 1fr\)/u,
@@ -42,6 +43,9 @@ describe("Pi assistant activity layout", () => {
 		);
 		expect(timelineSource).toContain("latestTurnActive && !hasAssistantActivityTarget");
 		expect(timelineSource).toContain('class="message-card assistant pending-assistant"');
+		expect(timelineSource).toContain(
+			"}, [lastMessage?.id, lastMessage?.text.length, lastMessage?.thought?.length, phase]);",
+		);
 	});
 
 	test("keeps completed tools collapsed and accessible", () => {
@@ -87,8 +91,9 @@ describe("Pi assistant activity layout", () => {
 		expect(timelineSource).toContain(
 			"const showToolPanel = tools.length > 0 && (showLiveTools || isSettled);",
 		);
+		expect(timelineSource).toContain("const showThinking = isWorking || thought.length > 0;");
 		expect(timelineSource).toMatch(
-			/\{showToolPanel \? \([\s\S]*?<ToolPanel key=\{toolPanelKey\}[\s\S]*?: isWorking \? \([\s\S]*?<ThinkingIndicator/u,
+			/\{showThinking \? \([\s\S]*?<ThinkingIndicator[\s\S]*?\{showToolPanel \? <ToolPanel key=\{toolPanelKey\} tools=\{tools\} \/> : null\}/u,
 		);
 		expect(timelineSource).toContain('showLiveTools ? "live" : "settled"');
 		expect(timelineSource).toContain("const [open, setOpen] = useState(false);");
@@ -134,6 +139,16 @@ describe("Pi assistant activity layout", () => {
 		expect(indicatorSource).toContain('aria-live="polite"');
 		expect(indicatorSource).toContain("{label}");
 		expect(indicatorSource).not.toContain("message.text");
+		expect(indicatorSource).not.toMatch(/thinking-transcript[\s\S]*?aria-live/u);
+		expect(indicatorSource).toContain('type="button"');
+		expect(indicatorSource).toContain("onClick={() => setOpen((current) => !current)}");
+		expect(indicatorSource).toContain("aria-expanded={open}");
+		expect(indicatorSource).toContain("aria-controls={transcriptId}");
+		expect(indicatorSource).toMatch(
+			/class=\{`thinking-transcript \$\{open \? "expanded" : "collapsed"\}`\}/u,
+		);
+		expect(indicatorSource).toContain("aria-hidden={!open}");
+		expect(indicatorSource).toContain("<code>{thought}</code>");
 		expect(appSource).not.toMatch(/activeTab\.title\}: \$\{activeTab\.progress/u);
 		expect(timelineSource).toContain(
 			'class="sr-only" role="status" aria-live="polite" aria-atomic="true"',
@@ -144,6 +159,8 @@ describe("Pi assistant activity layout", () => {
 		expect(styleSource).toMatch(
 			/\.tool-label \{[\s\S]*?min-width: 0[\s\S]*?overflow-wrap: anywhere/u,
 		);
+		expect(styleSource).toMatch(/\.thinking-transcript\.collapsed \{[\s\S]*?display: none/u);
+		expect(styleSource).toMatch(/\.thinking-transcript\.expanded \{[\s\S]*?display: block/u);
 		expect(styleSource).toMatch(
 			/@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.thinking-status-mark > span[\s\S]*?animation: none/u,
 		);
@@ -155,10 +172,12 @@ describe("Pi assistant activity layout", () => {
 
 describe("user prompt visibility", () => {
 	test("renders user prompts in the timeline instead of hiding them", () => {
-		expect(timelineSource).toContain('messages.map((message, index) => {');
-		expect(timelineSource).toContain("{message.role === \"assistant\" ? null : messageBody}");
-		expect(timelineSource).not.toMatch(/messages\.filter\(\s*\(?message\)?\s*=>\s*message\.role\s*!==\s*"user"/u);
-		expect(timelineSource).toContain('aria-label={`${label} message`}');
+		expect(timelineSource).toContain("messages.map((message, index) => {");
+		expect(timelineSource).toContain('{message.role === "assistant" ? null : messageBody}');
+		expect(timelineSource).not.toMatch(
+			/messages\.filter\(\s*\(?message\)?\s*=>\s*message\.role\s*!==\s*"user"/u,
+		);
+		expect(timelineSource).toContain("aria-label={`${label} message`}");
 		expect(timelineSource).toContain('message.role === "user"');
 		expect(timelineSource).toContain('? "You"');
 	});
