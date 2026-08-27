@@ -1,0 +1,2 @@
+# Keep working-tree text as LF so Biome (`lineEnding: "lf"`) passes on Windows.
+* text=auto eol=lf
