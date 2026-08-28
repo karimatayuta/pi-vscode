@@ -222,7 +222,7 @@ function assertPackageContents(
 	}
 
 	const forbidden = [
-		/^extension\/(?:src|scripts|test|docs|\.github|\.vscode)\//u,
+		/^extension\/(?:src|scripts|test|docs|\.github|\.pi|\.specs|\.vscode)\//u,
 		/^extension\/(?:bun\.lock|biome\.json|tsconfig\.json|\.gitignore|\.vscodeignore)$/u,
 		/^extension\/(?:CONTRIBUTING|SECURITY)\.md$/u,
 		/^extension\/node_modules\/(?:@vscode\/test-(?:cli|electron)|mocha|serialize-javascript)\//u,

@@ -17,3 +17,8 @@ coverage/
 !.env.example
 .DS_Store
 Thumbs.db
+
+
+.specs/
+
+.pi/
