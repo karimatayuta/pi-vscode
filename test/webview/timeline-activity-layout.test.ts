@@ -177,7 +177,7 @@ describe("user prompt visibility", () => {
 		expect(timelineSource).not.toMatch(
 			/messages\.filter\(\s*\(?message\)?\s*=>\s*message\.role\s*!==\s*"user"/u,
 		);
-		expect(timelineSource).toContain("aria-label={`${label} message`}");
+		expect(timelineSource).toMatch(/aria-label=\{`\$\{label\} message`\}/u);
 		expect(timelineSource).toContain('message.role === "user"');
 		expect(timelineSource).toContain('? "You"');
 	});
