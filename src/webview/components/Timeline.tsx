@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "preact/hooks";
 import { postIntent } from "../bridge.js";
+import { writeClipboard } from "../clipboard.js";
 import {
 	type ActivityAnnouncementState,
 	advanceActivityAnnouncement,
@@ -18,6 +19,69 @@ function MessageTime({ timestamp }: { readonly timestamp: number }) {
 		<time dateTime={new Date(timestamp).toISOString()} title={new Date(timestamp).toLocaleString()}>
 			{formatTime(timestamp)}
 		</time>
+	);
+}
+
+type MessageCopyStatus = "idle" | "copied" | "failed";
+
+function MessageCopyButton({ text }: { readonly text: string }) {
+	const [status, setStatus] = useState<MessageCopyStatus>("idle");
+	const resetTimer = useRef<number>();
+
+	useEffect(() => {
+		setStatus("idle");
+	}, [text]);
+
+	useEffect(
+		() => () => {
+			if (resetTimer.current !== undefined) window.clearTimeout(resetTimer.current);
+		},
+		[],
+	);
+
+	const copyMessage = async () => {
+		const copied = await writeClipboard(text);
+		setStatus(copied ? "copied" : "failed");
+		if (resetTimer.current !== undefined) window.clearTimeout(resetTimer.current);
+		resetTimer.current = window.setTimeout(() => setStatus("idle"), 1_800);
+	};
+	const label =
+		status === "copied"
+			? "Response copied"
+			: status === "failed"
+				? "Could not copy response"
+				: "Copy response";
+
+	return (
+		<>
+			<button
+				class={`message-copy-button ${status}`}
+				type="button"
+				aria-label={label}
+				title={label}
+				onClick={copyMessage}
+			>
+				{status === "copied" ? (
+					<svg viewBox="0 0 24 24" aria-hidden="true">
+						<path
+							fill="currentColor"
+							d="m9.1 17.2-4.3-4.3 1.4-1.4 2.9 2.9 8.7-8.7 1.4 1.4-10.1 10.1Z"
+						/>
+					</svg>
+				) : (
+					<svg viewBox="0 0 24 24" aria-hidden="true">
+						<path fill="currentColor" d="M8 7h10v13H8V7Zm2 2v9h6V9h-6ZM4 3h10v2H6v11H4V3Z" />
+					</svg>
+				)}
+			</button>
+			<span class="sr-only" role="status" aria-live="polite">
+				{status === "copied"
+					? "Response copied to clipboard"
+					: status === "failed"
+						? "Could not copy response"
+						: ""}
+			</span>
+		</>
 	);
 }
 
@@ -94,7 +158,7 @@ function ThinkingIndicator({
 	const transcriptId = `thought-${useId()}`;
 	const label = progress.trim() || "ご依頼の内容を確認しています";
 	const hasThought = thought.length > 0;
-	const heading = working ? label : "思考過程";
+	const heading = working ? label : "Thought";
 
 	useEffect(() => {
 		if (!open || !working) return;
@@ -126,8 +190,8 @@ function ThinkingIndicator({
 					aria-controls={transcriptId}
 					aria-label={
 						working
-							? `思考過程${open ? "を閉じる" : "を開く"}。作業状況: ${label}`
-							: `思考過程${open ? "を閉じる" : "を開く"}`
+							? `${open ? "Collapse" : "Expand"} thought. Current activity: ${label}`
+							: `${open ? "Collapse" : "Expand"} thought`
 					}
 					onClick={() => setOpen((current) => !current)}
 				>
@@ -225,6 +289,7 @@ function MessageCard({
 	progress = "",
 	active = false,
 	settled = true,
+	dimmed = false,
 	showLiveTools = false,
 	toolPanelKey,
 }: {
@@ -233,6 +298,7 @@ function MessageCard({
 	readonly progress?: string;
 	readonly active?: boolean;
 	readonly settled?: boolean;
+	readonly dimmed?: boolean;
 	readonly showLiveTools?: boolean;
 	readonly toolPanelKey?: string;
 }) {
@@ -285,7 +351,7 @@ function MessageCard({
 	);
 	return (
 		<article
-			class={`message-card ${message.role}`}
+			class={`message-card ${message.role}${isWorking ? " working" : ""}${dimmed ? " dimmed" : ""}`}
 			aria-label={`${label} message`}
 			aria-busy={isWorking || undefined}
 		>
@@ -308,7 +374,14 @@ function MessageCard({
 								)}
 								{showToolPanel ? <ToolPanel key={toolPanelKey} tools={tools} /> : null}
 							</div>
-							{isWorking ? null : <MessageTime timestamp={message.timestamp} />}
+							{isWorking ? null : (
+								<div class="assistant-message-actions">
+									{isSettled && message.text.trim().length > 0 ? (
+										<MessageCopyButton text={message.text} />
+									) : null}
+									<MessageTime timestamp={message.timestamp} />
+								</div>
+							)}
 						</div>
 						{messageBody}
 					</div>
@@ -560,6 +633,7 @@ export function Timeline({
 					const inLatestTurn = latestUserIndex >= 0 && index > latestUserIndex;
 					const isActivityTarget = index === assistantActivityIndex;
 					const settled = !inLatestTurn || (isActivityTarget && latestTurnSettled);
+					const dimmed = latestTurnActive && latestUserIndex >= 0 && index < latestUserIndex;
 					const hasTools = (message.tools?.length ?? 0) > 0;
 					const showLiveTools =
 						message.role === "assistant" && inLatestTurn && latestTurnActive && hasTools;
@@ -574,6 +648,7 @@ export function Timeline({
 							progress={isActivityTarget ? progress : ""}
 							active={isActivityTarget && latestTurnActive}
 							settled={settled}
+							dimmed={dimmed}
 							showLiveTools={showLiveTools}
 							{...(toolPanelKey ? { toolPanelKey } : {})}
 						/>

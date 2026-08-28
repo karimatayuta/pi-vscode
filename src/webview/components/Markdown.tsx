@@ -4,6 +4,7 @@ import type { KeyboardEvent } from "preact/compat";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { renderModernMermaid, sanitizeMermaidSvg } from "../beautiful-mermaid.js";
 import { postIntent } from "../bridge.js";
+import { writeClipboard } from "../clipboard.js";
 import { renderMarkdown } from "../markdown-renderer.js";
 import type { ReferenceDescriptor } from "../types.js";
 
@@ -32,24 +33,6 @@ interface CopyStatus {
 type MermaidCacheEntry =
 	| { readonly state: "rendered"; readonly svg: string }
 	| { readonly state: "error" };
-
-async function writeClipboard(value: string): Promise<boolean> {
-	try {
-		await navigator.clipboard.writeText(value);
-		return true;
-	} catch {
-		const field = document.createElement("textarea");
-		field.value = value;
-		field.setAttribute("readonly", "");
-		field.style.position = "fixed";
-		field.style.opacity = "0";
-		document.body.append(field);
-		field.select();
-		const copied = document.execCommand("copy");
-		field.remove();
-		return copied;
-	}
-}
 
 export function Markdown({ text, references = [], streaming = false }: MarkdownProps) {
 	const [menu, setMenu] = useState<ReferenceMenuState>();

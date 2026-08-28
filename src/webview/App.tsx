@@ -80,6 +80,7 @@ export function App() {
 				`color-${visualDesign.colorMode}`,
 				`density-${visualDesign.density}`,
 				activeTab?.phase === "running" ? "is-running" : "",
+				activeTab?.phase === "waitingApproval" ? "is-waiting" : "",
 			]
 				.filter(Boolean)
 				.join(" "),

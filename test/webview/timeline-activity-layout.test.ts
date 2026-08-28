@@ -12,6 +12,11 @@ const timelineSource = readFileSync(
 	"utf8",
 );
 const appSource = readFileSync(resolve(projectRoot, "src/webview/App.tsx"), "utf8");
+const markdownSource = readFileSync(
+	resolve(projectRoot, "src/webview/components/Markdown.tsx"),
+	"utf8",
+);
+const clipboardSource = readFileSync(resolve(projectRoot, "src/webview/clipboard.ts"), "utf8");
 const styleSource = readFileSync(resolve(projectRoot, "src/webview/styles.css"), "utf8");
 
 describe("Pi assistant activity layout", () => {
@@ -38,14 +43,32 @@ describe("Pi assistant activity layout", () => {
 			'const latestTurnActive = phase === "running" || phase === "waitingApproval";',
 		);
 		expect(timelineSource).toContain("active={isActivityTarget && latestTurnActive}");
-		expect(timelineSource).toContain(
-			"{isWorking ? null : <MessageTime timestamp={message.timestamp} />}",
-		);
+		expect(timelineSource).toContain("{isWorking ? null : (");
+		expect(timelineSource).toContain('class="assistant-message-actions"');
+		expect(timelineSource).toContain("<MessageTime timestamp={message.timestamp} />");
 		expect(timelineSource).toContain("latestTurnActive && !hasAssistantActivityTarget");
 		expect(timelineSource).toContain('class="message-card assistant pending-assistant"');
 		expect(timelineSource).toContain(
 			"}, [lastMessage?.id, lastMessage?.text.length, lastMessage?.thought?.length, phase]);",
 		);
+	});
+
+	test("copies a completed assistant response with accessible status feedback", () => {
+		expect(timelineSource).toContain('import { writeClipboard } from "../clipboard.js";');
+		expect(markdownSource).toContain('import { writeClipboard } from "../clipboard.js";');
+		expect(timelineSource).toContain("const copied = await writeClipboard(text);");
+		expect(timelineSource).toContain("isSettled && message.text.trim().length > 0");
+		expect(timelineSource).toContain("<MessageCopyButton text={message.text} />");
+		expect(timelineSource).toMatch(/class=\{`message-copy-button \$\{status\}`\}/u);
+		expect(timelineSource).toContain("aria-label={label}");
+		expect(timelineSource).toContain('role="status" aria-live="polite"');
+		expect(clipboardSource).toContain("await navigator.clipboard.writeText(value)");
+		expect(clipboardSource).toContain('document.execCommand("copy")');
+		expect(clipboardSource).toContain("finally {");
+		expect(styleSource).toMatch(
+			/\.message-copy-button \{[\s\S]*?min-width: 26px[\s\S]*?color: var\(--pi-muted\)/u,
+		);
+		expect(styleSource).toMatch(/\.message-copy-button\.copied \{[\s\S]*?var\(--pi-idle\)/u);
 	});
 
 	test("keeps completed tools collapsed and accessible", () => {
@@ -128,6 +151,17 @@ describe("Pi assistant activity layout", () => {
 		expect(detailStyles).toContain("white-space: normal;");
 		expect(detailStyles).not.toContain("text-overflow: ellipsis;");
 		expect(detailStyles).not.toContain("max-width:");
+	});
+
+	test("uses a concise English label after reasoning settles", () => {
+		const indicatorSource = timelineSource.slice(
+			timelineSource.indexOf("function ThinkingIndicator"),
+			timelineSource.indexOf("function DiffCard"),
+		);
+		expect(indicatorSource).toContain('const heading = working ? label : "Thought";');
+		expect(indicatorSource).toMatch(/\$\{open \? "Collapse" : "Expand"\} thought/u);
+		expect(indicatorSource).toMatch(/Current activity: \$\{label\}/u);
+		expect(indicatorSource).not.toContain("思考過程");
 	});
 
 	test("announces only the bounded activity summary and honors reduced motion and narrow views", () => {

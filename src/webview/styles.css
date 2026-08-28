@@ -33,7 +33,7 @@ select,
 input,
 textarea {
 	border: 1px solid var(--pi-border);
-	border-radius: 6px;
+	border-radius: var(--pi-radius-md, 6px);
 	background: var(--pi-input);
 }
 
@@ -43,10 +43,7 @@ button {
 }
 
 button:hover:not(:disabled) {
-	background: var(
-		--vscode-toolbar-hoverBackground,
-		color-mix(in srgb, var(--pi-surface), white 8%)
-	);
+	background: var(--pi-hover, color-mix(in srgb, var(--pi-surface), white 8%));
 }
 
 button:disabled,
@@ -104,6 +101,10 @@ select:disabled {
 	--pi-shadow-overlay:
 		0 10px 28px color-mix(in srgb, black, transparent 55%),
 		0 2px 7px color-mix(in srgb, black, transparent 68%);
+	--pi-motion: 200ms ease;
+	--pi-dim-opacity: 0.5;
+	--pi-dim-soft: 0.62;
+	--pi-dim-composer: 0.82;
 	display: grid;
 	position: relative;
 	grid-template-rows: auto minmax(0, 1fr) auto;
@@ -205,7 +206,7 @@ select:disabled {
 	padding: 0;
 	place-items: center;
 	border-color: transparent;
-	border-radius: 6px;
+	border-radius: var(--pi-radius-md);
 	background: transparent;
 }
 
@@ -226,10 +227,10 @@ select:disabled {
 	gap: 5px;
 	padding: 0;
 	border-color: transparent;
-	border-radius: 6px;
+	border-radius: var(--pi-radius-md);
 	color: var(--pi-muted);
 	background: transparent;
-	font-size: 0.78rem;
+	font-size: var(--pi-text-sm);
 }
 
 .tabs-shell {
@@ -262,7 +263,7 @@ select:disabled {
 	height: 32px;
 	margin-right: 2px;
 	border: 0;
-	border-radius: 6px;
+	border-radius: var(--pi-radius-md);
 }
 
 .chat-tab-wrap.active {
@@ -302,7 +303,7 @@ select:disabled {
 	min-height: 28px;
 	padding: 0;
 	border-color: transparent;
-	border-radius: 5px;
+	border-radius: var(--pi-radius-sm);
 	background: transparent;
 	opacity: 0;
 }
@@ -338,7 +339,7 @@ select:disabled {
 	height: 10px;
 	margin-top: 0;
 	font-size: 8px;
-	font-weight: 800;
+	font-weight: 700;
 	color: #111;
 }
 
@@ -445,7 +446,7 @@ select:disabled {
 	min-height: 32px;
 	padding: 0;
 	border-color: transparent;
-	border-radius: 6px;
+	border-radius: var(--pi-radius-md);
 	background: transparent;
 }
 
@@ -1221,6 +1222,51 @@ select:disabled {
 	min-width: 0;
 }
 
+.assistant-message-actions {
+	display: flex;
+	min-height: 28px;
+	align-items: center;
+	gap: 2px;
+}
+
+.message-copy-button {
+	display: inline-grid;
+	width: 26px;
+	min-width: 26px;
+	min-height: 26px;
+	padding: 5px;
+	border: 1px solid transparent;
+	border-radius: var(--pi-radius-sm);
+	color: var(--pi-muted);
+	background: transparent;
+	opacity: 0.55;
+	place-items: center;
+	transition:
+		color 120ms ease,
+		opacity 120ms ease;
+}
+
+.message-copy-button:hover:not(:disabled),
+.message-copy-button:focus-visible {
+	color: var(--pi-text);
+	opacity: 1;
+}
+
+.message-copy-button.copied {
+	color: var(--pi-idle);
+	opacity: 1;
+}
+
+.message-copy-button.failed {
+	color: var(--pi-error);
+	opacity: 1;
+}
+
+.message-copy-button svg {
+	width: 15px;
+	height: 15px;
+}
+
 .assistant-activity-line {
 	display: grid;
 	min-width: 0;
@@ -1230,7 +1276,7 @@ select:disabled {
 	column-gap: 6px;
 	margin-bottom: 3px;
 	color: var(--pi-muted);
-	font-size: 0.88rem;
+	font-size: var(--pi-text-md);
 }
 
 .assistant-name {
@@ -1238,7 +1284,7 @@ select:disabled {
 	min-height: 28px;
 	align-items: center;
 	color: var(--pi-muted);
-	font-weight: 650;
+	font-weight: 600;
 }
 
 .message-header {
@@ -1248,14 +1294,14 @@ select:disabled {
 	min-height: 24px;
 	margin-bottom: 3px;
 	color: var(--pi-muted);
-	font-size: 0.88rem;
+	font-size: var(--pi-text-md);
 }
 
 .message-header time,
 .assistant-activity-line time {
 	margin-left: 3px;
 	color: var(--pi-muted);
-	font-size: 0.8rem;
+	font-size: var(--pi-text-sm);
 	opacity: 0;
 	transition: opacity 120ms ease;
 	white-space: nowrap;
@@ -1281,7 +1327,7 @@ select:disabled {
 	color: var(--pi-accent);
 	background: color-mix(in srgb, var(--pi-accent), transparent 88%);
 	place-items: center;
-	font-weight: 650;
+	font-weight: 600;
 }
 
 .agent-avatar {
@@ -1292,7 +1338,7 @@ select:disabled {
 	flex: 0 0 auto;
 	overflow: hidden;
 	border: 1px solid color-mix(in srgb, var(--pi-agent-icon-foreground), transparent 78%);
-	border-radius: 5px;
+	border-radius: var(--pi-radius-sm);
 	color: var(--pi-agent-icon-foreground);
 	background: var(--pi-agent-icon-background);
 	place-items: center;
@@ -1362,7 +1408,7 @@ select:disabled {
 .markdown h6 {
 	margin: 1em 0 0.42em;
 	color: var(--pi-text);
-	font-weight: 650;
+	font-weight: 600;
 	line-height: 1.28;
 }
 
@@ -1436,7 +1482,7 @@ select:disabled {
 
 .markdown th {
 	background: color-mix(in srgb, var(--pi-surface-2), transparent 28%);
-	font-weight: 650;
+	font-weight: 600;
 }
 
 .markdown .align-center {
@@ -1466,7 +1512,7 @@ select:disabled {
 	height: 14px;
 	margin: 0 7px 0 1px;
 	border: 1px solid var(--vscode-checkbox-border, var(--pi-border));
-	border-radius: 3px;
+	border-radius: var(--pi-radius-xs);
 	color: var(--vscode-checkbox-foreground, var(--pi-background));
 	background: var(--vscode-checkbox-background, var(--pi-input));
 	place-items: center;
@@ -1512,7 +1558,7 @@ pre {
 	margin: 7px 0;
 	overflow: auto;
 	border: 1px solid var(--pi-border);
-	border-radius: 5px;
+	border-radius: var(--pi-radius-sm);
 	background: var(
 		--vscode-textCodeBlock-background,
 		color-mix(in srgb, var(--pi-background), black 12%)
@@ -1528,7 +1574,7 @@ pre {
 	max-width: 100%;
 	overflow: hidden;
 	border: 1px solid var(--pi-border);
-	border-radius: 6px;
+	border-radius: var(--pi-radius-md);
 	background: var(
 		--vscode-textCodeBlock-background,
 		color-mix(in srgb, var(--pi-background), black 12%)
@@ -1549,7 +1595,7 @@ pre {
 .code-language {
 	overflow: hidden;
 	font-family: var(--pi-font-interface);
-	font-size: 0.78rem;
+	font-size: var(--pi-text-sm);
 	letter-spacing: 0.02em;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -1560,10 +1606,10 @@ pre {
 	min-height: 26px;
 	padding: 1px 7px;
 	border: 0;
-	border-radius: 4px;
+	border-radius: var(--pi-radius-xs);
 	color: var(--pi-muted);
 	background: transparent;
-	font-size: 0.78rem;
+	font-size: var(--pi-text-sm);
 }
 
 .code-copy-button:hover {
@@ -1606,7 +1652,7 @@ pre {
 
 .mermaid-language {
 	font-family: var(--pi-font-interface);
-	font-size: 0.78rem;
+	font-size: var(--pi-text-sm);
 	font-weight: 600;
 	letter-spacing: 0.045em;
 }
@@ -1616,16 +1662,16 @@ pre {
 	min-height: 26px;
 	padding: 1px 7px;
 	border: 0;
-	border-radius: 4px;
+	border-radius: var(--pi-radius-xs);
 	color: var(--pi-muted);
 	background: transparent;
-	font-size: 0.78rem;
+	font-size: var(--pi-text-sm);
 }
 
 .mermaid-copy-button:hover,
 .mermaid-copy-button:focus-visible {
 	color: var(--pi-text);
-	background: color-mix(in srgb, var(--pi-surface-2), transparent 20%);
+	background: var(--pi-hover);
 }
 
 .mermaid-render {
@@ -1676,7 +1722,7 @@ pre {
 	color: var(--pi-muted);
 	background: color-mix(in srgb, var(--pi-surface-2), transparent 56%);
 	font-family: var(--pi-font-interface);
-	font-size: 0.78rem;
+	font-size: var(--pi-text-sm);
 	line-height: 1.35;
 }
 
@@ -1693,7 +1739,7 @@ pre {
 kbd {
 	padding: 1px 4px;
 	border: 1px solid var(--pi-border);
-	border-radius: 3px;
+	border-radius: var(--pi-radius-xs);
 	color: var(--vscode-textPreformat-foreground, var(--pi-text));
 	background: var(--vscode-textCodeBlock-background, var(--pi-surface-2));
 }
@@ -1706,7 +1752,7 @@ kbd {
 	gap: 7px;
 	padding: 4px 7px;
 	border: 1px solid color-mix(in srgb, var(--pi-border), transparent 24%);
-	border-radius: 5px;
+	border-radius: var(--pi-radius-sm);
 	color: var(--pi-muted);
 	background: color-mix(in srgb, var(--pi-surface-2), transparent 55%);
 }
@@ -1719,7 +1765,7 @@ kbd {
 }
 
 .markdown-image-placeholder small {
-	font-size: 0.78em;
+	font-size: var(--pi-text-sm);
 	white-space: nowrap;
 }
 
@@ -1747,7 +1793,7 @@ kbd {
 	gap: 4px;
 	padding: 2px 6px;
 	border: 1px solid color-mix(in srgb, var(--pi-border), transparent 40%);
-	border-radius: 6px;
+	border-radius: var(--pi-radius-md);
 	color: var(--pi-text);
 	background: color-mix(in srgb, var(--pi-surface-2), transparent 35%);
 }
@@ -1823,7 +1869,7 @@ kbd {
 	min-height: 32px;
 	padding: 4px 2px;
 	border: 0;
-	border-radius: 5px;
+	border-radius: var(--pi-radius-sm);
 	color: var(--pi-muted);
 	background: transparent;
 	text-align: left;
@@ -1847,9 +1893,9 @@ kbd {
 
 .tool-count {
 	color: color-mix(in srgb, var(--pi-muted), transparent 10%);
-	font-size: 0.8rem;
+	font-size: var(--pi-text-sm);
 	font-variant-numeric: tabular-nums;
-	font-weight: 450;
+	font-weight: 400;
 }
 
 .count-badge {
@@ -1857,7 +1903,7 @@ kbd {
 	border-radius: 999px;
 	color: var(--pi-muted);
 	background: var(--pi-background);
-	font-size: 0.8rem;
+	font-size: var(--pi-text-sm);
 }
 
 .tool-list {
@@ -1899,7 +1945,7 @@ kbd {
 	min-width: 0;
 	color: var(--pi-muted);
 	font-family: var(--pi-font-code);
-	font-size: 0.82rem;
+	font-size: var(--pi-text-sm);
 	line-height: 1.38;
 	overflow-wrap: anywhere;
 	white-space: normal;
@@ -1951,7 +1997,7 @@ kbd {
 	gap: 8px;
 	padding: 3px 2px;
 	border: 0;
-	border-radius: 5px;
+	border-radius: var(--pi-radius-sm);
 	color: inherit;
 	background: transparent;
 	font: inherit;
@@ -1960,7 +2006,7 @@ kbd {
 
 .thinking-toggle:hover,
 .thinking-toggle:focus-visible {
-	background: color-mix(in srgb, var(--pi-surface), transparent 28%);
+	background: var(--pi-hover);
 }
 
 .thinking-indicator.compact > .thinking-toggle,
@@ -2000,7 +2046,7 @@ kbd {
 	flex: 1 1 auto;
 	overflow: visible;
 	color: color-mix(in srgb, var(--pi-text), var(--pi-muted) 58%);
-	font-size: 0.86rem;
+	font-size: var(--pi-text-md);
 	font-weight: 400;
 	line-height: 1.35;
 	overflow-wrap: anywhere;
@@ -2026,7 +2072,7 @@ kbd {
 	color: color-mix(in srgb, var(--pi-text), var(--pi-muted) 32%);
 	background: transparent;
 	font-family: var(--pi-font-code);
-	font-size: 0.82rem;
+	font-size: var(--pi-text-sm);
 	line-height: 1.45;
 	overflow-wrap: anywhere;
 	white-space: pre-wrap;
@@ -2115,7 +2161,7 @@ kbd {
 
 .file-type {
 	color: var(--vscode-symbolIcon-classForeground, #4fc1ff);
-	font-size: 0.78rem;
+	font-size: var(--pi-text-sm);
 }
 
 .diff-stats ins {
@@ -2160,7 +2206,7 @@ kbd {
 	gap: 6px;
 	padding: 6px 8px;
 	border: 1px solid var(--pi-warning);
-	border-radius: 5px;
+	border-radius: var(--pi-radius-sm);
 	background: color-mix(in srgb, var(--pi-warning), var(--pi-background) 88%);
 }
 
@@ -2188,7 +2234,7 @@ kbd {
 	border-radius: 999px;
 	color: var(--pi-text);
 	background: color-mix(in srgb, var(--pi-surface), var(--pi-background) 14%);
-	box-shadow: 0 5px 14px color-mix(in srgb, black, transparent 72%);
+	box-shadow: var(--pi-shadow-raised);
 }
 
 .empty-chat {
@@ -2202,7 +2248,7 @@ kbd {
 
 .empty-chat h2 {
 	margin: 8px 0 4px;
-	font-size: 1.12rem;
+	font-size: var(--pi-text-lg);
 }
 
 .empty-chat p {
@@ -2214,8 +2260,8 @@ kbd {
 	width: 38px;
 	height: 38px;
 	min-width: 38px;
-	border-radius: 10px;
-	box-shadow: 0 4px 16px color-mix(in srgb, black, transparent 66%);
+	border-radius: var(--pi-radius);
+	box-shadow: var(--pi-shadow-raised);
 }
 
 .agent-avatar-hero .agent-avatar-text {
@@ -2255,7 +2301,7 @@ kbd {
 
 .approval-card dt {
 	color: var(--pi-muted);
-	font-size: 0.82rem;
+	font-size: var(--pi-text-sm);
 }
 
 .approval-card dd {
@@ -2286,7 +2332,6 @@ kbd {
 	padding: 7px 9px 9px;
 	border-top: 1px solid var(--pi-border);
 	background: var(--pi-background);
-	box-shadow: 0 -7px 16px color-mix(in srgb, black, transparent 82%);
 }
 
 .composer-chips {
@@ -2348,7 +2393,7 @@ kbd {
 
 .composer-drop-overlay small {
 	color: var(--pi-muted);
-	font-size: 0.78rem;
+	font-size: var(--pi-text-sm);
 	font-weight: 400;
 }
 
@@ -2422,7 +2467,7 @@ kbd {
 .input-hint {
 	padding: 0 9px 4px;
 	color: var(--pi-muted);
-	font-size: 0.78rem;
+	font-size: var(--pi-text-sm);
 }
 
 .composer-actions {
@@ -2457,7 +2502,7 @@ kbd {
 	height: 30px;
 	min-height: 30px;
 	padding: 0;
-	border-radius: 6px;
+	border-radius: var(--pi-radius-md);
 	font-size: 13px;
 }
 
@@ -2494,7 +2539,7 @@ kbd {
 	padding-inline: 6px;
 	border-color: color-mix(in srgb, var(--pi-border), transparent 38%);
 	background: color-mix(in srgb, var(--pi-surface), transparent 42%);
-	font-size: clamp(11px, 0.84rem, 13px);
+	font-size: var(--pi-text-control);
 }
 
 .mode-label {
@@ -2518,7 +2563,7 @@ kbd {
 .mode-help {
 	margin: 0 4px 6px;
 	color: var(--pi-muted);
-	font-size: 0.82rem;
+	font-size: var(--pi-text-sm);
 }
 
 .mode-lock-message {
@@ -2566,7 +2611,7 @@ kbd {
 	gap: 6px;
 	padding: 6px 8px;
 	border: 1px solid var(--pi-warning);
-	border-radius: 5px;
+	border-radius: var(--pi-radius-sm);
 	background: color-mix(in srgb, var(--pi-warning), var(--pi-background) 91%);
 }
 
@@ -2594,9 +2639,9 @@ kbd {
 	max-height: min(310px, 42vh);
 	overflow: hidden;
 	border: 1px solid var(--pi-accent);
-	border-radius: 7px;
+	border-radius: var(--pi-radius-md);
 	background: var(--vscode-quickInput-background, var(--pi-surface));
-	box-shadow: 0 8px 24px color-mix(in srgb, black, transparent 35%);
+	box-shadow: var(--pi-shadow-overlay);
 }
 
 .suggestion-popover > header,
@@ -2608,12 +2653,12 @@ kbd {
 	gap: 8px;
 	padding: 5px 8px;
 	color: var(--pi-muted);
-	font-size: 0.82rem;
+	font-size: var(--pi-text-sm);
 }
 
 .suggestion-popover > header strong {
 	color: var(--pi-text);
-	font-size: 0.9rem;
+	font-size: var(--pi-text-md);
 }
 
 .suggestion-list {
@@ -2657,10 +2702,10 @@ kbd {
 
 .kind-badge {
 	padding: 1px 4px;
-	border-radius: 3px;
+	border-radius: var(--pi-radius-xs);
 	color: var(--pi-muted);
 	background: var(--pi-surface-2);
-	font-size: 0.72rem;
+	font-size: var(--pi-text-xs);
 }
 
 .kind-badge.skill {
@@ -2679,9 +2724,9 @@ kbd {
 	gap: 6px;
 	padding: 7px;
 	border: 1px solid var(--pi-border);
-	border-radius: 6px;
+	border-radius: var(--pi-radius-md);
 	background: var(--vscode-notifications-background, var(--pi-surface));
-	box-shadow: 0 5px 18px color-mix(in srgb, black, transparent 40%);
+	box-shadow: var(--pi-shadow-overlay);
 }
 
 .notice-toast.error {
@@ -2720,15 +2765,15 @@ kbd {
 
 .settings-header h2 {
 	margin: 0;
-	font-size: 1.05rem;
+	font-size: var(--pi-text-lg);
 }
 
 .unsaved-badge {
 	padding: 1px 5px;
-	border-radius: 3px;
+	border-radius: var(--pi-radius-xs);
 	color: var(--pi-warning);
 	background: color-mix(in srgb, var(--pi-warning), transparent 88%);
-	font-size: 0.76rem;
+	font-size: var(--pi-text-xs);
 }
 
 .settings-scroll {
@@ -2865,7 +2910,7 @@ kbd {
 
 .agent-icon-settings .help-text {
 	margin: 0;
-	font-size: 0.8rem;
+	font-size: var(--pi-text-sm);
 	line-height: 1.45;
 }
 
@@ -2873,7 +2918,7 @@ kbd {
 	margin-bottom: 8px;
 	overflow: hidden;
 	border: 1px solid var(--pi-border);
-	border-radius: 6px;
+	border-radius: var(--pi-radius-md);
 }
 
 .settings-group-heading {
@@ -2940,6 +2985,99 @@ kbd {
 
 .reset-design {
 	margin: 5px 0 14px;
+}
+
+/* Focus mode: spotlight the work in progress, dim what needs no attention.
+   Visual emphasis only — layout, hit targets, and behavior stay unchanged. */
+.message-card,
+.composer-dock,
+.tool-row {
+	transition: opacity var(--pi-motion);
+}
+
+.message-card.dimmed {
+	opacity: var(--pi-dim-opacity);
+}
+
+.message-card.dimmed:hover,
+.message-card.dimmed:focus-within {
+	opacity: 1;
+}
+
+.message-card.assistant.working,
+.message-card.pending-assistant {
+	padding: 6px 9px 8px;
+	border-radius: var(--pi-radius);
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--pi-accent), transparent 94%),
+		color-mix(in srgb, var(--pi-accent), transparent 98%) 60%,
+		transparent
+	);
+	box-shadow: inset 2px 0 0 color-mix(in srgb, var(--pi-accent), transparent 40%);
+}
+
+.message-card.working .thinking-status-mark > span {
+	background: var(--pi-accent);
+}
+
+.message-card.working .thinking-label {
+	color: var(--pi-text);
+}
+
+/* Inside an active card, settle finished tool rows back and spotlight the running one. */
+.message-card.working .tool-row:not(.running) {
+	opacity: var(--pi-dim-soft);
+}
+
+.tool-row.running {
+	margin-inline: -5px;
+	padding-inline: 5px;
+	border-radius: var(--pi-radius-sm);
+	background: color-mix(in srgb, var(--pi-running), transparent 93%);
+}
+
+.tool-row.running .tool-label {
+	color: var(--pi-text);
+	font-weight: 500;
+}
+
+/* While the agent runs, quiet the composer until the user reaches for it. */
+.pi-app.is-running .composer-dock {
+	opacity: var(--pi-dim-composer);
+}
+
+.pi-app.is-running .composer-dock:hover,
+.pi-app.is-running .composer-dock:focus-within {
+	opacity: 1;
+}
+
+.pi-app.is-running .composer-actions .stop-button {
+	border-color: color-mix(in srgb, var(--pi-running), transparent 45%);
+	color: var(--pi-running);
+}
+
+/* While an approval is pending, spotlight the request itself. */
+.pi-app.is-waiting .timeline .message-card:not(.working) {
+	opacity: var(--pi-dim-opacity);
+}
+
+.pi-app.is-waiting .timeline .message-card:not(.working):hover,
+.pi-app.is-waiting .timeline .message-card:not(.working):focus-within {
+	opacity: 1;
+}
+
+.pi-app.is-waiting .approval-card {
+	box-shadow: var(--pi-shadow-raised);
+}
+
+/* Dimming must never hide content from high-contrast or forced-colors users. */
+.pi-app.color-highContrast,
+body.vscode-high-contrast .pi-app,
+body.vscode-high-contrast-light .pi-app {
+	--pi-dim-opacity: 1;
+	--pi-dim-soft: 1;
+	--pi-dim-composer: 1;
 }
 
 /* Accessibility helpers, motion preferences, and responsive refinements. */
@@ -3156,6 +3294,18 @@ kbd {
 	.assistant-activity-line time {
 		transition: none;
 	}
+
+	.message-card,
+	.composer-dock,
+	.tool-row {
+		transition: none;
+	}
+}
+
+body.vscode-reduce-motion .message-card,
+body.vscode-reduce-motion .composer-dock,
+body.vscode-reduce-motion .tool-row {
+	transition: none;
 }
 
 body.vscode-reduce-motion .status-icon.running,
@@ -3219,6 +3369,12 @@ body.vscode-high-contrast-light .markdown-image-placeholder {
 }
 
 @media (forced-colors: active) {
+	.pi-app {
+		--pi-dim-opacity: 1;
+		--pi-dim-soft: 1;
+		--pi-dim-composer: 1;
+	}
+
 	.status-icon,
 	.status-dot,
 	.avatar,
