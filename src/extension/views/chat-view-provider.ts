@@ -288,6 +288,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 			case "setThinking":
 				await this.model.setThinking(message.chatId, message.level);
 				break;
+			case "applyModelSettings":
+				await this.model.applyModelSettings(
+					message.chatId,
+					message.provider,
+					message.modelId,
+					message.thinking,
+					message.saveAsDefault,
+				);
+				if (message.saveAsDefault) {
+					this.notice("info", "Model settings saved as the default for new Pi chats.");
+				}
+				break;
 			case "saveModelDefault":
 				await this.model.saveModelDefault(message.chatId);
 				this.notice("info", "Model saved as the default for new Pi chats.");

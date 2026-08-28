@@ -55,15 +55,20 @@ describe("composer configuration layout", () => {
 		expect(sessionControlsSource).toContain('role="progressbar"');
 		expect(sessionControlsSource).toContain('<dl class="usage-grid">');
 		expect(sessionControlsSource).toContain('class="live-badge">Live');
-		expect(sessionControlsSource).toContain('live={phase === "running"}');
+		expect(sessionControlsSource).toContain('const live = phase === "running"');
+		expect(sessionControlsSource).toContain("<UsagePill chatId={chatId} phase={phase}");
 		expect(sessionControlsSource).not.toContain("active={busy}");
 		expect(sessionControlsSource).toContain('event.key !== "Escape"');
 		expect(sessionControlsSource).toContain("buttonRef.current?.focus()");
+		expect(sessionControlsSource).toContain("aria-labelledby={headingId}");
+		expect(sessionControlsSource).toContain("aria-valuetext={");
 
 		expect(styles).toMatch(/\.composer-session-controls \{[\s\S]*?gap: 3px[\s\S]*?border: 0/u);
 		expect(styles).toMatch(/\.model-pill \{[\s\S]*?height: 30px[\s\S]*?gap: 4px/u);
 		expect(styles).toMatch(/\.usage-pill \{[\s\S]*?min-width: 56px[\s\S]*?height: 30px/u);
-		expect(styles).toMatch(/\.popover \{[\s\S]*?padding: 12px[\s\S]*?border-radius: 9px/u);
+		expect(styles).toMatch(
+			/\.popover \{[\s\S]*?padding: 12px[\s\S]*?border-radius: var\(--pi-radius\)/u,
+		);
 		expect(styles).toMatch(
 			/@media \(max-width: 288px\)[\s\S]*?\.composer-actions \{[\s\S]*?flex-wrap: wrap[\s\S]*?\.composer-right-actions \{[\s\S]*?width: 100%[\s\S]*?flex: 1 0 100%/u,
 		);
@@ -71,7 +76,11 @@ describe("composer configuration layout", () => {
 			/@media \(max-width: 288px\)[\s\S]*?\.model-popover,[\s\S]*?\.usage-popover \{[\s\S]*?width: calc\(100% - 10px\)/u,
 		);
 		expect(styles).toMatch(
-			/\.model-popover \{[\s\S]*?max-height: min\(520px, calc\(100vh - 72px\)\)[\s\S]*?overflow-y: auto/u,
+			/\.model-popover \{[\s\S]*?max-height: min\(560px, calc\(100vh - 72px\)\)[\s\S]*?overflow: hidden/u,
+		);
+		expect(styles).toMatch(/\.model-popover-body \{[\s\S]*?overflow-y: auto/u);
+		expect(styles).toMatch(
+			/@media \(max-height: 480px\)[\s\S]*?\.model-popover \{[\s\S]*?display: block[\s\S]*?overflow-y: auto/u,
 		);
 		expect(styles).toMatch(
 			/\.usage-popover \{[\s\S]*?max-height: min\(520px, calc\(100vh - 72px\)\)[\s\S]*?overflow-y: auto/u,
@@ -154,7 +163,7 @@ describe("composer configuration layout", () => {
 		expect(styles).toMatch(/\.suggestion-popover \{[\s\S]*?max-height: min\(310px, 42vh\)/u);
 	});
 
-	test("formats estimated and subscription costs without losing sub-cent values", () => {
+	test("shows precise, actionable session usage without misrepresenting cost", () => {
 		expect(sessionControlsSource).toContain(
 			'import { formatEstimatedCost } from "../../shared/usage.js";',
 		);
@@ -163,21 +172,46 @@ describe("composer configuration layout", () => {
 			/usage\.costKind === "subscription" \? `\$\{estimate\} · Sub` : estimate/u,
 		);
 		expect(sessionControlsSource).toContain(
-			"Token cost shown for reference; your provider subscription may cover it.",
+			"Reference token cost only; your provider subscription may cover it.",
 		);
-		expect(sessionControlsSource).toContain("Pricing is unavailable for this session.");
+		expect(sessionControlsSource).toContain("Pricing is not available for the selected model.");
 		expect(sessionControlsSource).toContain(
 			'{cost ? <span class="usage-cost wide-only">{cost}</span> : null}',
 		);
+		expect(sessionControlsSource).toContain("Current context");
+		expect(sessionControlsSource).toContain("remainingTokens");
+		expect(sessionControlsSource).toContain("Session tokens");
+		expect(sessionControlsSource).toContain("fullNumber(usage.total)");
+		expect(sessionControlsSource).toContain('{cost ?? "Unavailable"}');
+		expect(sessionControlsSource).toContain("disabled={busy}");
+		expect(sessionControlsSource).toContain("Stop the current response to compact this chat.");
+		expect(sessionControlsSource).toContain("Compact this chat");
+		expect(sessionControlsSource).toContain("Start new chat");
+	});
+
+	test("stages model and reasoning together with unambiguous default behavior", () => {
+		expect(sessionControlsSource).toContain("draftForModelOption");
+		expect(sessionControlsSource).toContain('type: "applyModelSettings"');
+		expect(sessionControlsSource).toContain("thinking: draft.thinking");
+		expect(sessionControlsSource).toContain("saveAsDefault");
+		expect(sessionControlsSource).not.toContain('type: "setThinking"');
+		expect(sessionControlsSource).toContain("Pending changes");
+		expect(sessionControlsSource).toContain(
+			"Set default also applies the selected settings to this chat.",
+		);
+		expect(sessionControlsSource).toContain('class="model-capabilities"');
+		expect(sessionControlsSource).toContain("No models match");
+		expect(sessionControlsSource).toContain("No authenticated models available");
+		expect(styles).toMatch(/\.model-popover-footer \{[\s\S]*?flex: 0 0 auto/u);
 	});
 
 	test("supports listbox keyboard navigation without adding every model to the Tab order", () => {
 		expect(sessionControlsSource).toContain('".model-option:not(:disabled)"');
-		expect(sessionControlsSource).toContain("tabIndex={isSelected ? 0 : -1}");
+		expect(sessionControlsSource).toContain("tabIndex={isTabStop ? 0 : -1}");
 		expect(sessionControlsSource).toContain('event.key === "ArrowDown"');
 		expect(sessionControlsSource).toContain('event.key === "ArrowUp"');
 		expect(sessionControlsSource).toContain('event.key === "Home"');
 		expect(sessionControlsSource).toContain('event.key === "End"');
-		expect(sessionControlsSource).toContain("setSelected(option);");
+		expect(sessionControlsSource).toContain("setDraft(draftForModelOption");
 	});
 });

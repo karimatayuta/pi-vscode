@@ -160,6 +160,14 @@ describe("Webview -> host protocol", () => {
 			modelId: "model-1",
 		},
 		{ type: "setThinking", chatId: "chat-1", level: "xhigh" },
+		{
+			type: "applyModelSettings",
+			chatId: "chat-1",
+			provider: "provider",
+			modelId: "model-1",
+			thinking: "high",
+			saveAsDefault: true,
+		},
 		{ type: "saveModelDefault", chatId: "chat-1" },
 		{ type: "configureProvider", provider: "provider" },
 		{ type: "compactContext", chatId: "chat-1" },
@@ -205,6 +213,18 @@ describe("Webview -> host protocol", () => {
 		["unknown type", { ...envelope, type: "shell.execute" }],
 		["empty prompt", { ...envelope, type: "sendPrompt", chatId: "c", text: " ", contextIds: [] }],
 		["unsafe approval mode", { ...envelope, type: "setApprovalMode", chatId: "c", mode: "sudo" }],
+		[
+			"malformed model settings",
+			{
+				...envelope,
+				type: "applyModelSettings",
+				chatId: "c",
+				provider: "provider",
+				modelId: "model",
+				thinking: "extreme",
+				saveAsDefault: "yes",
+			},
+		],
 		["empty drop", { ...envelope, type: "dropContext", uris: [] }],
 		["missing resource epoch", { ...envelope, type: "openReference", refId: "r", action: "open" }],
 	])("rejects %s", (_label, message) => {

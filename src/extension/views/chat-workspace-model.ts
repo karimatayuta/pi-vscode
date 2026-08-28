@@ -585,14 +585,24 @@ export class ChatWorkspaceModel implements vscode.Disposable {
 	public async loadModels(): Promise<void> {
 		const generation = this.#modelLoad.begin();
 		const active = this.#records.get(this.#activeChatId);
-		if (active) active.model = { ...active.model, loading: true };
+		if (active) {
+			const loadingModel = { ...active.model, loading: true };
+			delete loadingModel.authError;
+			active.model = loadingModel;
+		}
 		this.#emit();
 		try {
 			const catalog = await (active?.controller.models() ?? this.host.listModels());
 			if (!this.#modelLoad.isCurrent(generation)) return;
 			this.#modelOptions = modelOptionsFromCatalog(catalog);
 			for (const record of this.#records.values()) {
-				record.model = { ...record.model, options: [...this.#modelOptions], loading: false };
+				const loadedModel = {
+					...record.model,
+					options: [...this.#modelOptions],
+					loading: false,
+				};
+				delete loadedModel.authError;
+				record.model = loadedModel;
 			}
 		} catch (error) {
 			if (!this.#modelLoad.isCurrent(generation)) return;
@@ -641,6 +651,65 @@ export class ChatWorkspaceModel implements vscode.Disposable {
 		this.#assertIdle(record, "change reasoning level");
 		const snapshot = await record.controller.setThinking(level);
 		record.model = modelStateFromSnapshot(snapshot, this.#modelOptions);
+		this.#emit();
+		await this.#persist();
+	}
+
+	public async applyModelSettings(
+		chatId: string,
+		provider: string,
+		modelId: string,
+		thinking: PiThinkingLevel,
+		saveAsDefault: boolean,
+	): Promise<void> {
+		const record = this.#requireRecord(chatId);
+		this.#assertIdle(record, "change model settings");
+		const catalogOption = this.#modelOptions.find(
+			(option) => option.provider === provider && option.id === modelId,
+		);
+		const supportsThinking = catalogOption
+			? catalogOption.thinkingLevels.length === 0
+				? thinking === "off"
+				: catalogOption.thinkingLevels.includes(thinking)
+			: true;
+		if (!supportsThinking) {
+			throw new Error(
+				`${thinking} reasoning is not available for ${catalogOption?.name ?? modelId}.`,
+			);
+		}
+
+		const modelChanged = record.model.provider !== provider || record.model.id !== modelId;
+		const thinkingChanged = record.model.thinking !== thinking;
+		if (!modelChanged && !thinkingChanged && !saveAsDefault) return;
+
+		const applySnapshot = (snapshot: PiSessionSnapshotDto) => {
+			record.model = modelStateFromSnapshot(snapshot, this.#modelOptions);
+			record.usage = usageFromSnapshot(snapshot);
+		};
+		let snapshot: PiSessionSnapshotDto;
+		try {
+			snapshot = await record.controller.applyModelSettings(
+				{ provider, id: modelId },
+				thinking,
+				saveAsDefault,
+			);
+		} catch (error) {
+			const partialSnapshot = record.controller.snapshot;
+			if (partialSnapshot) applySnapshot(partialSnapshot);
+			this.#emit();
+			await this.#persist();
+			throw error;
+		}
+		applySnapshot(snapshot);
+		if (modelChanged || thinkingChanged) {
+			record.messages.push({
+				id: randomUUID(),
+				role: "system",
+				text: `Model settings changed to ${snapshot.model?.name ?? modelId} · ${snapshot.thinkingLevel} reasoning`,
+				timestamp: Date.now(),
+			});
+			this.#boundMessages(record);
+		}
 		this.#emit();
 		await this.#persist();
 	}

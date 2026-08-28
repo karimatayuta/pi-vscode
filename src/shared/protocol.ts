@@ -292,6 +292,15 @@ export const WebviewToHostMessageSchema = v.variant("type", [
 	}),
 	v.object({
 		...ClientEnvelopeEntries,
+		type: v.literal("applyModelSettings"),
+		chatId: IdSchema,
+		provider: IdSchema,
+		modelId: IdSchema,
+		thinking: ThinkingLevelSchema,
+		saveAsDefault: v.boolean(),
+	}),
+	v.object({
+		...ClientEnvelopeEntries,
 		type: v.literal("saveModelDefault"),
 		chatId: IdSchema,
 	}),

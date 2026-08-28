@@ -83,6 +83,12 @@ The prose below is the authoritative flow; the diagram above is only a summary.
 update its host dispatcher, Webview caller, and positive and negative protocol tests together.
 Breaking wire changes require an explicit `PROTOCOL_VERSION` decision.
 
+The model picker keeps provider, model, and reasoning changes as one Webview-local draft. One validated
+`applyModelSettings` intent reaches `ChatWorkspaceModel`, which validates model capabilities before
+`ChatSessionController` applies the model and reasoning in order. When requested, the same operation
+persists both defaults. This avoids racing independent messages and prevents a pending selection from
+being mistaken for the current default.
+
 ## Session and tool lifecycle
 
 Extension activation creates one `PiHostService`, model runtime, workspace model, permission router,
@@ -105,8 +111,11 @@ Tool events follow a separate turn lifecycle:
    `ProposedEditStore` keeps the resulting diff in memory for VS Code review.
 
 Live usage overlays the latest message usage on the last confirmed SDK totals. Preview publication is
-throttled, while confirmed message/tool/settle boundaries reset it. Cost remains a catalog-price
-estimate even for subscriptions; unknown catalog pricing is the only unavailable state.
+throttled, while confirmed message/tool/settle boundaries reset it. The UI separates current-context
+usage and remaining capacity from exact cumulative session tokens. Cost remains a catalog-price
+estimate even for subscriptions; unknown catalog pricing is the only unavailable state. Compaction is
+disabled in the Webview while a response or approval is active, and the host independently enforces the
+same idle-session requirement.
 
 ## Tool permission flow
 

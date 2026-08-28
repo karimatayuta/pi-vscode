@@ -114,6 +114,21 @@ export class ChatSessionController implements PiDisposable {
 		return this.#acceptSnapshot(await this.host.setThinking(this.#requireId(), level, persist));
 	}
 
+	public async applyModelSettings(
+		ref: { readonly provider: string; readonly id: string },
+		thinking: PiThinkingLevel,
+		persist = false,
+	): Promise<PiSessionSnapshotDto> {
+		const current = this.#snapshot;
+		const modelChanged = current?.model?.provider !== ref.provider || current.model.id !== ref.id;
+		let applied = current;
+		if (modelChanged || persist) applied = await this.setModel(ref, persist);
+		if (!applied || persist || applied.thinkingLevel !== thinking) {
+			applied = await this.setThinking(thinking, persist);
+		}
+		return applied;
+	}
+
 	public async setTitle(title: string): Promise<PiSessionSnapshotDto> {
 		return this.#acceptSnapshot(await this.host.setTitle(this.#requireId(), title));
 	}

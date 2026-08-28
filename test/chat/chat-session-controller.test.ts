@@ -55,8 +55,10 @@ class FakePiHost implements PiHostApi {
 	readonly listeners = new Set<PiHostEventListener>();
 	readonly closed: PiHostSessionId[] = [];
 	readonly sent: Array<{ id: PiHostSessionId; input: PiPromptInput }> = [];
+	readonly settingsCalls: string[] = [];
 	current = bootstrap();
 	closeError: Error | undefined;
+	thinkingError: Error | undefined;
 	openResult: Promise<PiSessionBootstrapDto> | undefined;
 
 	public async start(_signal?: AbortSignal): Promise<void> {}
@@ -105,17 +107,32 @@ class FakePiHost implements PiHostApi {
 
 	public async setModel(
 		_id: PiHostSessionId,
-		_ref: { readonly provider: string; readonly id: string },
-		_persist?: boolean,
+		ref: { readonly provider: string; readonly id: string },
+		persist?: boolean,
 	): Promise<PiSessionSnapshotDto> {
+		this.settingsCalls.push(`model:${ref.provider}/${ref.id}:${Boolean(persist)}`);
+		this.current = {
+			...this.current,
+			snapshot: {
+				...this.current.snapshot,
+				model: { ...ref, name: ref.id },
+				availableThinkingLevels: ["off", "high"],
+			},
+		};
 		return this.current.snapshot;
 	}
 
 	public async setThinking(
 		_id: PiHostSessionId,
-		_level: PiThinkingLevel,
-		_persist?: boolean,
+		level: PiThinkingLevel,
+		persist?: boolean,
 	): Promise<PiSessionSnapshotDto> {
+		this.settingsCalls.push(`thinking:${level}:${Boolean(persist)}`);
+		if (this.thinkingError) throw this.thinkingError;
+		this.current = {
+			...this.current,
+			snapshot: { ...this.current.snapshot, thinkingLevel: level },
+		};
 		return this.current.snapshot;
 	}
 
@@ -171,6 +188,47 @@ describe("ChatSessionController", () => {
 		expect(controller.sessionId).toBe(opened.snapshot.id);
 		await controller.send({ text: "hello" });
 		expect(host.sent).toEqual([{ id: "session-1", input: { text: "hello" } }]);
+	});
+
+	test("applies model and reasoning settings in one ordered operation", async () => {
+		const host = new FakePiHost();
+		const controller = new ChatSessionController(host);
+		await controller.open({ cwd: "/workspace", target: { kind: "new" } });
+
+		const applied = await controller.applyModelSettings(
+			{ provider: "provider", id: "developer-model" },
+			"high",
+			true,
+		);
+		expect(host.settingsCalls).toEqual([
+			"model:provider/developer-model:true",
+			"thinking:high:true",
+		]);
+		expect(applied).toMatchObject({
+			model: { provider: "provider", id: "developer-model" },
+			thinkingLevel: "high",
+		});
+
+		host.settingsCalls.length = 0;
+		await controller.applyModelSettings({ provider: "provider", id: "developer-model" }, "high");
+		expect(host.settingsCalls).toEqual([]);
+		await controller.applyModelSettings({ provider: "provider", id: "developer-model" }, "off");
+		expect(host.settingsCalls).toEqual(["thinking:off:false"]);
+	});
+
+	test("retains the accepted model snapshot if applying reasoning fails", async () => {
+		const host = new FakePiHost();
+		const controller = new ChatSessionController(host);
+		await controller.open({ cwd: "/workspace", target: { kind: "new" } });
+		host.thinkingError = new Error("reasoning failed");
+
+		await expect(
+			controller.applyModelSettings({ provider: "provider", id: "new-model" }, "high"),
+		).rejects.toThrow("reasoning failed");
+		expect(controller.snapshot).toMatchObject({
+			model: { provider: "provider", id: "new-model" },
+			thinkingLevel: "off",
+		});
 	});
 
 	test("forwards only current, non-stale session events", async () => {
