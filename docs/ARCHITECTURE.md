@@ -126,9 +126,10 @@ also pass through the host policy.
 5. Allow once resolves only that call. Allow for session records only a normal-risk signature;
    dangerous calls cannot become session grants. Deny and reset fail closed.
 
-Plan denies mutation and execution. Ask confirms them. Auto Edit allows normal workspace edits but
-confirms commands and higher-risk boundaries. Full Access allows commands without per-command
-confirmation; directly classified secret, outside-workspace, and critical tool requests still ask,
+Plan denies mutation and execution. Ask confirms them. Auto Edit allows normal workspace edits and
+ordinary commands without per-command confirmation, but confirms deletion, dangerous commands, and
+higher-risk boundaries. Full Access allows commands without per-command confirmation; directly
+classified secret, outside-workspace, and critical tool requests still ask,
 but indirect command effects cannot be classified reliably. Restricted Mode fixes the UI to Plan
 and also limits the SDK's available tools, so the UI selector is not the enforcement boundary.
 

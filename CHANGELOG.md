@@ -25,6 +25,7 @@ All notable changes to Pi Agent are documented in this file.
 
 ### Changed
 
+- Auto Edit now runs ordinary commands without approval while continuing to require one-shot confirmation for deletion and dangerous commands.
 - Made chat links conservative around Japanese prose while preserving Markdown links, line references, balanced URL punctuation, and real workspace navigation.
 - Refined the composer-side Model and Session Usage controls with readable spacing, responsive wrapping, viewport-safe popovers, and complete tool-path wrapping.
 - Added live streaming context, token, and cost updates with subscription-aware and unknown-pricing states.

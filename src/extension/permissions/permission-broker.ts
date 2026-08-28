@@ -16,6 +16,7 @@ export type PermissionReason =
 	| "plan-mode-mutation"
 	| "ask-mode-confirmation"
 	| "auto-edit-workspace-change"
+	| "auto-edit-command-execution"
 	| "auto-edit-confirmation"
 	| "full-access"
 	| "critical-risk-confirmation"
@@ -131,6 +132,15 @@ export function evaluatePermission(
 				action: "allow",
 				mode,
 				reason: "auto-edit-workspace-change",
+				request,
+			};
+		}
+
+		if (request.capability === "command.execute") {
+			return {
+				action: "allow",
+				mode,
+				reason: "auto-edit-command-execution",
 				request,
 			};
 		}

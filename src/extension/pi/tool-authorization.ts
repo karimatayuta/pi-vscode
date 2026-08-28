@@ -24,8 +24,9 @@ const DANGEROUS_COMMAND = new RegExp(
 	[
 		String.raw`\b(?:sudo|doas)\b`,
 		String.raw`\b(?:rm|rmdir|shred|unlink|truncate)\b`,
-		String.raw`\b(?:del|erase|rd)\s+(?:/s|/q|/f)\b`,
-		String.raw`\bRemove-Item\b`,
+		String.raw`\b(?:del|erase|rd)\b`,
+		String.raw`\b(?:Remove-Item|Clear-Content)\b`,
+		String.raw`\bfind\b[^\r\n]*\s-delete\b`,
 		String.raw`\b(?:mkfs|fdisk|diskpart)\b`,
 		String.raw`\bdd\s+[^\n]*(?:of=|if=\/dev\/)`,
 		String.raw`\b(?:chmod|chown|chgrp)\b`,

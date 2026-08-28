@@ -67,15 +67,17 @@ sandbox化するmodeではありません。出所や内容を確認できない
 直接指定されたfile pathはtool実行前にworkspace基準で解決し、realpathとsymlinkを考慮して
 workspace外到達を判定します。直接判定できたsecret候補、workspace外、critical riskはFull Accessでも
 確認します。dangerous requestはAllow for sessionへ保存できず、承認requestはchat IDと結び付けて
-timeoutします。
+timeoutします。Auto Editは通常と分類したcommandを自動許可しますが、削除や既知の危険なcommand
+patternはcritical riskとして実行前に確認します。
 
 Pi自身、SDK、skillについて質問されたときに限り、Piの標準system promptが案内する拡張機能package
 内のREADME、docs、examplesをbuilt-in read toolで参照できます。この例外はセッション作成時にrealpathを固定した
 read-only resourceだけに適用し、任意の拡張機能path、symlink先、edit、write、commandには適用しません。
 
-ただしFull Accessのshell commandは個別確認なしで実行され、command内部からのfile、network、
-workspace外accessを完全には分類できません。たとえばscriptやinterpreterを介した間接accessは、
-事前判定を回避し得ます。このmodeはhost上で任意commandが動き得るものとして扱ってください。
+ただしAuto Editで通常と分類されたshell commandと、Full Accessのshell commandは個別確認なしで
+実行され、command内部からのfile、network、workspace外accessを完全には分類できません。たとえば
+scriptやinterpreterを介した間接accessは、事前判定を回避し得ます。これらのmodeはhost上で任意
+commandが動き得るものとして扱ってください。
 
 これらは誤操作や典型的な境界逸脱を減らす仕組みであり、AIが生成したcommandの安全性を保証する
 ものではありません。承認cardのtargetとcommandを読み、重要なworkspaceではversion管理とbackupを

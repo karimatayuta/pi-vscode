@@ -30,7 +30,7 @@ const MODES: readonly ModeOption[] = [
 		mode: "autoEdit",
 		label: "Auto Edit",
 		icon: "✎",
-		description: "ワークスペース内の編集は自動。コマンドと高リスク操作は確認します",
+		description: "ワークスペース内の編集と通常のコマンド実行は自動。削除や高リスク操作は確認します",
 	},
 	{
 		mode: "fullAccess",

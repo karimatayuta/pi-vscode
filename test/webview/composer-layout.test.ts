@@ -105,6 +105,7 @@ describe("composer configuration layout", () => {
 		expect(modeControlSource).toContain('event.key === "Escape"');
 		expect(modeControlSource).toContain('event.key !== "Tab"');
 		expect(modeControlSource).toContain("restoreButtonFocus()");
+		expect(modeControlSource).toContain("通常のコマンド実行は自動。削除や高リスク操作は確認します");
 		expect(modeControlSource).toContain("コマンドを個別確認なしで実行します");
 		expect(modeControlSource).toContain("影響範囲は完全には判定できず");
 		expect(modeControlSource).not.toContain("危険な操作は引き続き個別確認");

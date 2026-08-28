@@ -43,6 +43,57 @@ describe("ToolAuthorizationRouter", () => {
 		router.dispose();
 	});
 
+	test("Auto Edit runs ordinary commands automatically but asks before deletion and dangerous commands", async () => {
+		const router = new ToolAuthorizationRouter();
+		router.register("session", "chat", "autoEdit");
+		const prompts: Array<{ capability: string; risk: string }> = [];
+		router.onDidRequest((prompt) => {
+			prompts.push({ capability: prompt.capability, risk: prompt.risk });
+			router.resolve(prompt.id, "chat", "allowOnce");
+		});
+
+		expect(
+			await router.authorize({
+				sessionId: "session",
+				toolCallId: "test",
+				toolName: "bash",
+				capability: "command.execute",
+				cwd: "/workspace",
+				command: "bun test",
+				risk: "sensitive",
+			}),
+		).toEqual({ allow: true });
+		expect(prompts).toEqual([]);
+
+		expect(
+			await router.authorize({
+				sessionId: "session",
+				toolCallId: "delete",
+				toolName: "delete",
+				capability: "workspace.delete",
+				cwd: "/workspace",
+				target: "/workspace/generated",
+				risk: "normal",
+			}),
+		).toEqual({ allow: true });
+		expect(
+			await router.authorize({
+				sessionId: "session",
+				toolCallId: "reset",
+				toolName: "bash",
+				capability: "command.execute",
+				cwd: "/workspace",
+				command: "git reset --hard",
+				risk: "dangerous",
+			}),
+		).toEqual({ allow: true });
+		expect(prompts).toEqual([
+			{ capability: "workspace.delete", risk: "normal" },
+			{ capability: "command.execute", risk: "dangerous" },
+		]);
+		router.dispose();
+	});
+
 	test("dangerous approvals are never promoted to a session grant", async () => {
 		const router = new ToolAuthorizationRouter();
 		router.register("session", "chat", "fullAccess");

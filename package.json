@@ -284,7 +284,7 @@
 						"enumDescriptions": [
 							"Read and plan only; changes and commands are blocked.",
 							"Ask before changes and command execution.",
-							"Allow workspace edits; ask before commands and higher-risk actions."
+							"Allow workspace edits and ordinary commands; ask before deletion and higher-risk actions."
 						],
 						"default": "ask",
 						"scope": "application",

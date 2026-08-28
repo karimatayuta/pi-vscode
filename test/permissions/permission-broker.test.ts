@@ -32,7 +32,8 @@ describe("permission policy matrix", () => {
 		["autoEdit", "workspace.edit", "high", "allow"],
 		["autoEdit", "workspace.write", "medium", "allow"],
 		["autoEdit", "workspace.delete", "low", "ask"],
-		["autoEdit", "command.execute", "low", "ask"],
+		["autoEdit", "command.execute", "low", "allow"],
+		["autoEdit", "command.execute", "high", "allow"],
 		["fullAccess", "command.execute", "high", "allow"],
 		["fullAccess", "network.access", "medium", "allow"],
 	])("%s evaluates %s/%s as %s", (mode, capability, risk, action) => {

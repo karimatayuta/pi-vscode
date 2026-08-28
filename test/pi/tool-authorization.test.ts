@@ -249,6 +249,14 @@ describe("Pi tool authorization gate", () => {
 			sessionId: "session-1",
 			cwd,
 		});
+		const deletions = await Promise.all(
+			["rm -rf dist", "del build.log", "Remove-Item generated", "find . -delete"].map((command) =>
+				classifyToolCall(toolCall("bash", { command }), {
+					sessionId: "session-1",
+					cwd,
+				}),
+			),
+		);
 		const dangerous = await classifyToolCall(toolCall("bash", { command: "git reset --hard" }), {
 			sessionId: "session-1",
 			cwd,
@@ -262,6 +270,7 @@ describe("Pi tool authorization gate", () => {
 			request: { capability: "mutate", risk: "safe" },
 		});
 		expect(shell.request).toMatchObject({ capability: "execute", risk: "sensitive" });
+		for (const deletion of deletions) expect(deletion.request.risk).toBe("dangerous");
 		expect(dangerous.request.risk).toBe("dangerous");
 		expect(custom.request).toMatchObject({ capability: "extension", risk: "dangerous" });
 	});
