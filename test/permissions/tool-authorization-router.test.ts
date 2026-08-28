@@ -94,13 +94,12 @@ describe("ToolAuthorizationRouter", () => {
 		router.dispose();
 	});
 
-	test("dangerous approvals are never promoted to a session grant", async () => {
+	test("Full Access runs dangerous commands without per-call approval", async () => {
 		const router = new ToolAuthorizationRouter();
 		router.register("session", "chat", "fullAccess");
 		let prompts = 0;
-		router.onDidRequest((prompt) => {
+		router.onDidRequest(() => {
 			prompts += 1;
-			router.resolve(prompt.id, "chat", "allowSession");
 		});
 		const request = {
 			sessionId: "session",
@@ -113,6 +112,52 @@ describe("ToolAuthorizationRouter", () => {
 		};
 		expect((await router.authorize(request)).allow).toBe(true);
 		expect((await router.authorize({ ...request, toolCallId: "tool-2" })).allow).toBe(true);
+		expect(prompts).toBe(0);
+		router.dispose();
+	});
+
+	test("Full Access still asks before a directly classified workspace boundary", async () => {
+		const router = new ToolAuthorizationRouter();
+		router.register("session", "chat", "fullAccess");
+		let prompts = 0;
+		router.onDidRequest((prompt) => {
+			prompts += 1;
+			expect(prompt.capability).toBe("filesystem.outside-workspace");
+			router.resolve(prompt.id, "chat", "allowOnce");
+		});
+		const result = await router.authorize({
+			sessionId: "session",
+			toolCallId: "outside",
+			toolName: "read",
+			capability: "filesystem.outside-workspace",
+			cwd: "/workspace",
+			target: "/outside/a.ts",
+			risk: "dangerous",
+		});
+		expect(result.allow).toBe(true);
+		expect(prompts).toBe(1);
+		router.dispose();
+	});
+
+	test("dangerous approvals in prompting modes never become session grants", async () => {
+		const router = new ToolAuthorizationRouter();
+		router.register("session", "chat", "ask");
+		let prompts = 0;
+		router.onDidRequest((prompt) => {
+			prompts += 1;
+			router.resolve(prompt.id, "chat", "allowSession");
+		});
+		const request = {
+			sessionId: "session",
+			toolCallId: "dangerous-1",
+			toolName: "bash",
+			capability: "command.execute" as const,
+			cwd: "/workspace",
+			command: "git reset --hard",
+			risk: "dangerous" as const,
+		};
+		expect((await router.authorize(request)).allow).toBe(true);
+		expect((await router.authorize({ ...request, toolCallId: "dangerous-2" })).allow).toBe(true);
 		expect(prompts).toBe(2);
 		router.dispose();
 	});
@@ -239,11 +284,11 @@ describe("ToolAuthorizationRouter", () => {
 		});
 		const pending = router.authorize({
 			sessionId: "session",
-			toolCallId: "dangerous",
-			toolName: "bash",
-			capability: "command.execute",
+			toolCallId: "outside",
+			toolName: "read",
+			capability: "filesystem.outside-workspace",
 			cwd: "/workspace",
-			command: "git reset --hard",
+			target: "/outside/a.ts",
 			risk: "dangerous",
 		});
 		router.reset();

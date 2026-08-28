@@ -128,9 +128,9 @@ also pass through the host policy.
 
 Plan denies mutation and execution. Ask confirms them. Auto Edit allows normal workspace edits and
 ordinary commands without per-command confirmation, but confirms deletion, dangerous commands, and
-higher-risk boundaries. Full Access allows commands without per-command confirmation; directly
-classified secret, outside-workspace, and critical tool requests still ask,
-but indirect command effects cannot be classified reliably. Restricted Mode fixes the UI to Plan
+higher-risk boundaries. Full Access allows critical operations, including known dangerous commands,
+without per-command confirmation; directly classified secret and outside-workspace boundaries still
+ask, but indirect command effects cannot be classified reliably. Restricted Mode fixes the UI to Plan
 and also limits the SDK's available tools, so the UI selector is not the enforcement boundary.
 
 ## Retained data and ownership

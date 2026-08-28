@@ -8,7 +8,7 @@ interface ModeOption {
 	readonly label: string;
 	readonly icon: string;
 	readonly description: string;
-	readonly danger?: boolean;
+	readonly warning?: boolean;
 }
 
 const ASK_MODE: ModeOption = {
@@ -38,7 +38,7 @@ const MODES: readonly ModeOption[] = [
 		icon: "⚠",
 		description:
 			"コマンドを確認なしで実行します。ワークスペース外・ネットワーク・機密情報にも到達し得ます",
-		danger: true,
+		warning: true,
 	},
 ];
 
@@ -225,7 +225,7 @@ export function ComposerModeControl({
 							role="menuitemradio"
 							aria-checked={entry.mode === approvalMode}
 							tabIndex={-1}
-							class={`mode-option ${entry.mode === approvalMode ? "selected" : ""} ${entry.danger ? "danger" : ""}`}
+							class={`mode-option ${entry.mode === approvalMode ? "selected" : ""} ${entry.warning ? "warning" : ""}`}
 							key={entry.mode}
 							disabled={busy || (!trusted && entry.mode !== "plan")}
 							onClick={() => chooseMode(entry.mode)}
@@ -266,7 +266,7 @@ export function ComposerModeControl({
 							キャンセル
 						</button>
 						<button
-							class="danger-button"
+							class="full-access-button"
 							type="button"
 							onClick={() => {
 								postIntent({ type: "setApprovalMode", chatId, mode: "fullAccess" });

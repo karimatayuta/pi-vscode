@@ -35,17 +35,15 @@ describe("permission policy matrix", () => {
 		["autoEdit", "command.execute", "low", "allow"],
 		["autoEdit", "command.execute", "high", "allow"],
 		["fullAccess", "command.execute", "high", "allow"],
+		["fullAccess", "command.execute", "critical", "allow"],
 		["fullAccess", "network.access", "medium", "allow"],
 	])("%s evaluates %s/%s as %s", (mode, capability, risk, action) => {
 		expect(evaluatePermission(mode, request(capability, risk)).action).toBe(action);
 	});
 
-	test.each<ApprovalMode>(["ask", "autoEdit", "fullAccess"])(
-		"%s always asks before critical operations",
-		(mode) => {
-			expect(evaluatePermission(mode, request("command.execute", "critical")).action).toBe("ask");
-		},
-	);
+	test.each<ApprovalMode>(["ask", "autoEdit"])("%s asks before critical operations", (mode) => {
+		expect(evaluatePermission(mode, request("command.execute", "critical")).action).toBe("ask");
+	});
 
 	test.each<ApprovalMode>(["ask", "autoEdit", "fullAccess"])(
 		"%s asks before crossing workspace or secret boundaries",

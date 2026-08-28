@@ -60,9 +60,10 @@ export interface PermissionBrokerOptions {
 /**
  * Evaluates a capability without mutating broker state.
  *
- * Critical operations always require a one-shot confirmation, even in Full
- * Access. Plan mode is stricter: anything capable of mutation or execution is
- * denied rather than presented for approval.
+ * Full Access permits critical operations after its session-scoped confirmation,
+ * while directly detected workspace and secret boundaries still require a
+ * one-shot approval. Plan mode is stricter: anything capable of mutation or
+ * execution is denied rather than presented for approval.
  */
 export function evaluatePermission(
 	mode: ApprovalMode,
@@ -93,6 +94,15 @@ export function evaluatePermission(
 			action: "ask",
 			mode,
 			reason: "sensitive-boundary-confirmation",
+			request,
+		};
+	}
+
+	if (mode === "fullAccess") {
+		return {
+			action: "allow",
+			mode,
+			reason: "full-access",
 			request,
 		};
 	}
@@ -149,15 +159,6 @@ export function evaluatePermission(
 			action: "ask",
 			mode,
 			reason: "auto-edit-confirmation",
-			request,
-		};
-	}
-
-	if (mode === "fullAccess") {
-		return {
-			action: "allow",
-			mode,
-			reason: "full-access",
 			request,
 		};
 	}

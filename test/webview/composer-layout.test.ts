@@ -113,6 +113,19 @@ describe("composer configuration layout", () => {
 		expect(composerSource).toContain("cannot be fully detected.");
 	});
 
+	test("uses an amber warning treatment instead of error red for Full Access", () => {
+		expect(modeControlSource).toContain("warning: true");
+		expect(modeControlSource).toContain('class="full-access-button"');
+		expect(modeControlSource).not.toContain('class="danger-button"');
+		expect(styles).toMatch(/\.mode-pill\.fullAccess \{[^}]*var\(--pi-warning\)/u);
+		expect(styles).toMatch(/\.full-confirm \{[^}]*border-color: var\(--pi-warning\)/u);
+		expect(styles).toMatch(/\.mode-option\.warning strong,[\s\S]*?color: var\(--pi-warning\)/u);
+		expect(styles).toMatch(/\.full-access-banner \{[^}]*border: 1px solid var\(--pi-warning\)/u);
+		expect(styles).toMatch(/\.full-access-button \{[^}]*border-color: var\(--pi-warning\)/u);
+		expect(styles).not.toMatch(/\.mode-pill\.fullAccess \{[^}]*var\(--pi-error\)/u);
+		expect(styles).not.toMatch(/\.full-access-banner \{[^}]*var\(--pi-error\)/u);
+	});
+
 	test("resizes the prompt from an accessible top-center handle", () => {
 		expect(composerSource).toContain("<hr");
 		expect(composerSource).toContain('class="composer-resize-handle"');

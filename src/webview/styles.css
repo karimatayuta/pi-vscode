@@ -756,10 +756,10 @@ select:disabled {
 	background: var(--vscode-button-hoverBackground, color-mix(in srgb, var(--pi-accent), white 12%));
 }
 
-.danger-button {
-	border-color: var(--pi-error);
-	color: white;
-	background: color-mix(in srgb, var(--pi-error), #601010 35%);
+.full-access-button {
+	border-color: var(--pi-warning);
+	color: var(--pi-text);
+	background: color-mix(in srgb, var(--pi-warning), var(--pi-surface) 78%);
 }
 
 .link-button {
@@ -2180,8 +2180,8 @@ kbd {
 }
 
 .mode-pill.fullAccess {
-	color: var(--pi-error);
-	border-color: var(--pi-error);
+	color: var(--pi-warning);
+	border-color: var(--pi-warning);
 }
 
 .mode-pill {
@@ -2228,7 +2228,7 @@ kbd {
 
 .full-confirm {
 	z-index: 55;
-	border-color: var(--pi-error);
+	border-color: var(--pi-warning);
 }
 
 .mode-option {
@@ -2256,9 +2256,9 @@ kbd {
 	color: var(--pi-muted);
 }
 
-.mode-option.danger strong,
-.mode-option.danger .mode-icon {
-	color: var(--pi-error);
+.mode-option.warning strong,
+.mode-option.warning .mode-icon {
+	color: var(--pi-warning);
 }
 
 .full-access-banner {
@@ -2266,9 +2266,9 @@ kbd {
 	align-items: start;
 	gap: 6px;
 	padding: 6px 8px;
-	border: 1px solid var(--pi-error);
+	border: 1px solid var(--pi-warning);
 	border-radius: 5px;
-	background: color-mix(in srgb, var(--pi-error), var(--pi-background) 91%);
+	background: color-mix(in srgb, var(--pi-warning), var(--pi-background) 91%);
 }
 
 .composer-actions .stop-button {
