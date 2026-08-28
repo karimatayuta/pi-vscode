@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { classifyContextResourceDrag, readDroppedUris } from "../../shared/drop-data.js";
 import { postIntent } from "../bridge.js";
 import { ComposerDropTracker } from "../composer-drop-tracker.js";
-import { promptSignal } from "../store.js";
+import { promptSignal, stageOptimisticUserMessage } from "../store.js";
 import type {
 	ApprovalMode,
 	CommandSuggestion,
@@ -197,11 +197,19 @@ export function Composer({
 				args: args.join(" "),
 			});
 		} else {
-			postIntent({
+			const timestamp = Date.now();
+			const requestId = postIntent({
 				type: "sendPrompt",
 				chatId,
 				text: value,
 				contextIds: context.map((item) => item.id),
+			});
+			stageOptimisticUserMessage(chatId, {
+				id: requestId,
+				role: "user",
+				text: value,
+				timestamp,
+				contexts: context.map((item) => ({ ...item })),
 			});
 		}
 		promptSignal.value = "";

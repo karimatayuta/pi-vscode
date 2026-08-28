@@ -31,6 +31,7 @@ All notable changes to Pi Agent are documented in this file.
 - Refined the composer-side Model and Session Usage controls with readable spacing, responsive wrapping, viewport-safe popovers, and complete tool-path wrapping.
 - Made model, provider, and reasoning changes a single staged action; clarified default-setting behavior and added searchable capability details for context, images, and reasoning.
 - Made Session Usage developer-focused with remaining context, exact session token totals, clearer cost semantics, threshold guidance, and a busy-safe compaction action.
+- Made submitted user requests appear immediately and remain visible through host acknowledgement in a labelled, theme-aware gradient card.
 - Added live streaming context, token, and cost updates with subscription-aware and unknown-pricing states.
 - Kept each live tool round inspectable while Pi works, then consolidated it into one collapsed `Tools N件` disclosure on the final response; expanding it restores every tool name, detail, and result without leaving empty intermediate Pi rows.
 - Rebalanced composer controls around the prompt and moved vertical resizing to an accessible top-center handle.

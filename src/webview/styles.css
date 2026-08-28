@@ -1126,17 +1126,71 @@ select:disabled {
 
 .message-card.user {
 	width: fit-content;
-	max-width: min(92%, 720px);
+	max-width: min(94%, 720px);
 	align-self: flex-end;
 	margin-left: auto;
 	margin-right: 0;
-	padding: 8px 11px;
-	border: 1px solid transparent;
+	padding: 0;
+	overflow: hidden;
+	border: 1px solid color-mix(in srgb, var(--pi-accent), var(--pi-border) 62%);
 	border-radius: var(--pi-radius);
-	background: color-mix(in srgb, var(--pi-user), var(--pi-background) 22%);
+	background: var(--pi-user);
 	/* Skip-painting would leave a 0-width fit-content card off-screen forever. */
 	content-visibility: visible;
 	contain-intrinsic-size: auto auto;
+}
+
+.message-card.user:hover,
+.message-card.user:focus-within {
+	border-color: color-mix(in srgb, var(--pi-accent), var(--pi-border) 34%);
+}
+
+.user-message-header {
+	display: flex;
+	min-height: 29px;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 5px 9px 4px;
+	border-bottom: 1px solid color-mix(in srgb, var(--pi-accent), transparent 84%);
+	background: color-mix(in srgb, var(--pi-accent), transparent 94%);
+}
+
+.user-message-label {
+	display: inline-flex;
+	min-width: 0;
+	align-items: center;
+	gap: 6px;
+	font-size: var(--pi-text-sm);
+	font-weight: 600;
+}
+
+.user-query-mark {
+	display: inline-grid;
+	width: 18px;
+	height: 18px;
+	border: 1px solid color-mix(in srgb, var(--pi-accent), transparent 52%);
+	border-radius: var(--pi-radius-sm);
+	color: var(--pi-accent);
+	background: var(--pi-accent-surface);
+	place-items: center;
+	font-family: var(--pi-font-code);
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.user-message-header time {
+	flex: 0 0 auto;
+	color: var(--pi-muted);
+	font-size: var(--pi-text-xs);
+	font-variant-numeric: tabular-nums;
+	opacity: 0.75;
+	white-space: nowrap;
+}
+
+.user-message-body {
+	padding: 8px 11px 10px;
 }
 
 .message-card.error {
@@ -3131,6 +3185,8 @@ body.vscode-high-contrast-light .pi-app {
 
 body.vscode-high-contrast .message-card.user,
 body.vscode-high-contrast-light .message-card.user,
+body.vscode-high-contrast .user-query-mark,
+body.vscode-high-contrast-light .user-query-mark,
 body.vscode-high-contrast .diff-card,
 body.vscode-high-contrast-light .diff-card,
 body.vscode-high-contrast .jump-to-latest,
@@ -3171,6 +3227,7 @@ body.vscode-high-contrast-light .markdown-image-placeholder {
 	}
 
 	.message-card.user,
+	.user-query-mark,
 	.diff-card,
 	.jump-to-latest {
 		border-color: currentColor;

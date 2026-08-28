@@ -235,7 +235,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 				await this.model.regenerateTitle(message.chatId);
 				break;
 			case "sendPrompt":
-				await this.model.send(message.chatId, message.text, message.contextIds);
+				await this.model.send(message.chatId, message.text, message.contextIds, message.requestId);
 				break;
 			case "stop":
 				await this.model.stop(message.chatId);

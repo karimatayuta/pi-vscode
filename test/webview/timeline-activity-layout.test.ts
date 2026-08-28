@@ -171,18 +171,24 @@ describe("Pi assistant activity layout", () => {
 });
 
 describe("user prompt visibility", () => {
-	test("renders user prompts in the timeline instead of hiding them", () => {
+	test("renders user prompts in a labelled request card instead of hiding them", () => {
 		expect(timelineSource).toContain("messages.map((message, index) => {");
-		expect(timelineSource).toContain('{message.role === "assistant" ? null : messageBody}');
 		expect(timelineSource).not.toMatch(
 			/messages\.filter\(\s*\(?message\)?\s*=>\s*message\.role\s*!==\s*"user"/u,
 		);
 		expect(timelineSource).toMatch(/aria-label=\{`\$\{label\} message`\}/u);
 		expect(timelineSource).toContain('message.role === "user"');
 		expect(timelineSource).toContain('? "You"');
+		expect(timelineSource).toContain('class="user-message-header"');
+		expect(timelineSource).toContain('class="user-query-mark"');
+		expect(timelineSource).toContain("<strong>Your request</strong>");
+		expect(timelineSource).toContain('class="user-message-body">{messageBody}');
+		expect(timelineSource).toContain(
+			'message.role === "assistant" || message.role === "user" ? null : messageBody',
+		);
 	});
 
-	test("keeps user bubbles paintable when they use fit-content width", () => {
+	test("gives user requests a visible, theme-aware accent boundary", () => {
 		const userCardStyles = styleSource.slice(
 			styleSource.indexOf(".message-card.user {"),
 			styleSource.indexOf(".message-card.error {"),
@@ -190,7 +196,17 @@ describe("user prompt visibility", () => {
 		expect(userCardStyles).toContain("width: fit-content;");
 		expect(userCardStyles).toContain("align-self: flex-end;");
 		expect(userCardStyles).toContain("content-visibility: visible;");
+		expect(userCardStyles).toContain("var(--pi-accent)");
+		expect(userCardStyles).toContain("background: var(--pi-user);");
+		expect(userCardStyles).not.toContain("border: 1px solid transparent;");
 		expect(userCardStyles).not.toMatch(/content-visibility:\s*auto/u);
+		expect(styleSource).toMatch(
+			/\.user-message-header \{[\s\S]*?border-bottom:[\s\S]*?var\(--pi-accent\)/u,
+		);
+		expect(styleSource).toMatch(/\.user-message-body \{[\s\S]*?padding: 8px 11px 10px/u);
+		expect(styleSource).toMatch(
+			/body\.vscode-high-contrast \.user-query-mark,[\s\S]*?border-color: var\(--pi-border\)/u,
+		);
 	});
 });
 

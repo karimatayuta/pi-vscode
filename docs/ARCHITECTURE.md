@@ -62,12 +62,15 @@ and [Workspace Trust guidance](https://code.visualstudio.com/api/extension-guide
 The prose below is the authoritative flow; the diagram above is only a summary.
 
 1. A Preact component sends an intent through `src/webview/bridge.ts`. The envelope contains the
-   shared protocol version and a unique request ID.
+   shared protocol version and a unique request ID. For `sendPrompt`, the Composer immediately stages
+   a user card under that same ID instead of waiting for an Extension Host round trip.
 2. `ChatViewProvider` validates the discriminated Valibot schema, rejects replayed request IDs, and
    dispatches the typed intent. No component calls VS Code or the Pi SDK directly.
-3. For a prompt, `ChatWorkspaceModel` resolves the selected context IDs again in `ContextStore`.
-   Files are canonicalized, checked against the local workspace, size-bounded, and wrapped with the
-   user request in a structured prompt that marks attachments as untrusted data.
+3. For a prompt, `ChatWorkspaceModel` records and publishes the user message with the wire request ID
+   before resolving selected context again in `ContextStore`. Files are canonicalized, checked against
+   the local workspace, size-bounded, and wrapped with the user request in a structured prompt that
+   marks attachments as untrusted data. A host snapshot carrying the same ID replaces the optimistic
+   Webview card without duplication.
 4. The tab's `ChatSessionController` forwards the typed request to the shared `PiHostService`, which
    owns the Pi model runtime and one SDK runtime per open chat session.
 5. Pi `AgentSessionEvent` values pass through `event-mapper.ts`. This adapter bounds strings, redacts

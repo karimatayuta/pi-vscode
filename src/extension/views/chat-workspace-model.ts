@@ -404,16 +404,20 @@ export class ChatWorkspaceModel implements vscode.Disposable {
 		if (closeFailure) throw new Error(closeFailure);
 	}
 
-	public async send(chatId: string, text: string, contextIds: readonly string[]): Promise<void> {
+	public async send(
+		chatId: string,
+		text: string,
+		contextIds: readonly string[],
+		messageId: string = randomUUID(),
+	): Promise<void> {
 		const record = this.#requireRecord(chatId);
 		const normalized = text.trim();
 		if (!normalized) return;
 		record.toolTracker.reset();
 		record.activityFocus = classifyUserTask(normalized);
-		const attached = await this.contextStore.resolveForPrompt(contextIds);
 		const visibleContexts = this.contextStore.items.filter((item) => contextIds.includes(item.id));
 		record.messages.push({
-			id: randomUUID(),
+			id: messageId,
 			role: "user",
 			text: normalized,
 			timestamp: Date.now(),
@@ -436,8 +440,9 @@ export class ChatWorkspaceModel implements vscode.Disposable {
 		record.phase = "running";
 		record.progress = summarizeSessionActivity("running", record.activityFocus);
 		this.#emit();
-		const prompt = createPiPrompt(normalized, attached);
 		try {
+			const attached = await this.contextStore.resolveForPrompt(contextIds);
+			const prompt = createPiPrompt(normalized, attached);
 			await record.controller.send({ text: prompt });
 		} catch (error) {
 			record.phase = "error";

@@ -9,13 +9,15 @@ declare function acquireVsCodeApi<T = unknown>(): {
 const vscode = acquireVsCodeApi<{ activeChatId?: string }>();
 let sequence = 0;
 
-export function postIntent(intent: WebviewIntent): void {
+export function postIntent(intent: WebviewIntent): string {
 	sequence += 1;
+	const requestId = `wv-${Date.now().toString(36)}-${sequence.toString(36)}`;
 	vscode.postMessage({
 		protocolVersion: 1,
-		requestId: `wv-${Date.now().toString(36)}-${sequence.toString(36)}`,
+		requestId,
 		...intent,
 	});
+	return requestId;
 }
 
 export function persistActiveChat(activeChatId: string): void {

@@ -313,7 +313,20 @@ function MessageCard({
 						{messageBody}
 					</div>
 				</div>
-			) : message.role !== "user" ? (
+			) : message.role === "user" ? (
+				<>
+					<header class="user-message-header">
+						<span class="user-message-label">
+							<span class="user-query-mark" aria-hidden="true">
+								›
+							</span>
+							<strong>Your request</strong>
+						</span>
+						<MessageTime timestamp={message.timestamp} />
+					</header>
+					<div class="user-message-body">{messageBody}</div>
+				</>
+			) : (
 				<header class="message-header">
 					<span class={`avatar ${message.role}`} aria-hidden="true">
 						{message.role === "error" ? "!" : "i"}
@@ -321,8 +334,8 @@ function MessageCard({
 					<strong>{label}</strong>
 					<MessageTime timestamp={message.timestamp} />
 				</header>
-			) : null}
-			{message.role === "assistant" ? null : messageBody}
+			)}
+			{message.role === "assistant" || message.role === "user" ? null : messageBody}
 		</article>
 	);
 }
